@@ -1,19 +1,30 @@
 body {
     font-family: Arial, sans-serif;
     padding: 20px;
-    width: 300px;
+    display: flex;
+    justify-content: center;
 }
 
-h2 {
+.equalizer {
+    display: flex;
+    gap: 20px; /* Space between sliders */
+}
 
+.slider-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center; /* Center the slider and label */
     text-align: center;
 }
 
 label {
-    display: block;
-    margin-top: 15px;
+    margin-bottom: 10px; /* Space between label and slider */
 }
 
 input[type="range"] {
-    width: 100%;
+    appearance: slider-vertical;
+    -webkit-appearance: slider-vertical;
+    writing-mode: bt-lr;
+    width: 100px;
+    height: 100px;
 }
