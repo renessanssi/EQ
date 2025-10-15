@@ -9,16 +9,19 @@
 <body>
   <div class="equalizer">
     <div class="slider-container">
-      <label for="bass">(60 Hz): <span id="bassVal">0</span> dB</label>
+      <label>60 Hz</label>
       <input type="range" id="bass" min="-30" max="30" value="0" step="1" />
+      <span id="bassVal">0</span>
     </div>
     <div class="slider-container">
-      <label for="mid">(1000 Hz): <span id="midVal">0</span> dB</label>
+      <label>1 kHz</label>
       <input type="range" id="mid" min="-30" max="30" value="0" step="1" />
+      <span id="midVal">0</span>
     </div>
     <div class="slider-container">
-      <label for="treble">(12000 Hz): <span id="trebleVal">0</span> dB</label>
+      <label>12 kHz</label>
       <input type="range" id="treble" min="-30" max="30" value="0" step="1" />
+      <span id="trebleVal">0</span>
     </div>
   </div>
   <script src="script.js"></script>
