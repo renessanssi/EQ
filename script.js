@@ -6,6 +6,26 @@ const bassValLabel = document.getElementById('bassVal');
 const midValLabel = document.getElementById('midVal');
 const trebleValLabel = document.getElementById('trebleVal');
 
+// Load saved settings from localStorage (popup side)
+function loadSavedSettings() {
+  const saved = localStorage.getItem('equalizerSettings');
+  if (saved) {
+    try {
+      const settings = JSON.parse(saved);
+      bassControl.value = settings.bass ?? 0;
+      midControl.value = settings.mid ?? 0;
+      trebleControl.value = settings.treble ?? 0;
+
+      bassValLabel.textContent = settings.bass ?? 0;
+      midValLabel.textContent = settings.mid ?? 0;
+      trebleValLabel.textContent = settings.treble ?? 0;
+    } catch (e) {
+      console.error("Error parsing saved settings:", e);
+    }
+  }
+}
+
+// Send settings to content script and store in localStorage
 function sendEQSettings() {
   const eqSettings = {
     bass: Number(bassControl.value),
@@ -13,16 +33,20 @@ function sendEQSettings() {
     treble: Number(trebleControl.value),
   };
 
+  // Update UI
   bassValLabel.textContent = eqSettings.bass;
   midValLabel.textContent = eqSettings.mid;
   trebleValLabel.textContent = eqSettings.treble;
 
+  // Save to localStorage (popup-side copy for UI consistency)
+  localStorage.setItem('equalizerSettings', JSON.stringify(eqSettings));
+
+  // Send to content script
   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-    if (!tabs[0].id) return;
+    if (!tabs[0]?.id) return;
     chrome.scripting.executeScript({
       target: { tabId: tabs[0].id },
       function: (settings) => {
-        // Dispatch event to content script to update EQ
         window.dispatchEvent(new CustomEvent('updateEqualizer', { detail: settings }));
       },
       args: [eqSettings]
@@ -30,17 +54,19 @@ function sendEQSettings() {
   });
 }
 
+// Add event listeners to sliders
 bassControl.addEventListener('input', sendEQSettings);
 midControl.addEventListener('input', sendEQSettings);
 trebleControl.addEventListener('input', sendEQSettings);
 
-// When popup opens, inject content script into the current tab
+// On popup open, load UI values and inject content script
 chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-  if (!tabs[0].id) return;
+  if (!tabs[0]?.id) return;
   chrome.scripting.executeScript({
     target: { tabId: tabs[0].id },
     files: ['content.js']
   }).then(() => {
-    sendEQSettings(); // send initial values after injecting
+    loadSavedSettings(); // Load UI with saved settings
+    sendEQSettings();    // Send current values to content script
   }).catch(console.error);
 });
