@@ -1,0 +1,12 @@
+{
+  "manifest_version": 3,
+  "name": "3-Band Equalizer for Any Tab",
+  "version": "1.0",
+  "description": "Apply 3-band equalizer on audio playing in any tab",
+  "permissions": ["scripting", "activeTab"],
+  "action": {
+    "default_popup": "index.html",
+    "default_title": "3-Band Equalizer"
+  },
+  "host_permissions": ["<all_urls>"]
+}

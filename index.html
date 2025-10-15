@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>3-Band Equalizer</title>
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <h2>3-Band Equalizer</h2>
+
+  <label for="bass">Bass (60 Hz): <span id="bassVal">0</span> dB</label>
+  <input type="range" id="bass" min="-30" max="30" value="0" step="1" />
+
+  <label for="mid">Mid (1000 Hz): <span id="midVal">0</span> dB</label>
+  <input type="range" id="mid" min="-30" max="30" value="0" step="1" />
+
+  <label for="treble">Treble (12000 Hz): <span id="trebleVal">0</span> dB</label>
+  <input type="range" id="treble" min="-30" max="30" value="0" step="1" />
+
+  <script src="script.js"></script>
+</body>
+</html>
