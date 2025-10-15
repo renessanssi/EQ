@@ -70,3 +70,35 @@ chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
     sendEQSettings();    // Send current values to content script
   }).catch(console.error);
 });
+
+// Reset button logic, sets all values to zero.
+const resetBtn = document.getElementById('resetBtn');
+
+resetBtn.addEventListener('click', () => {
+  bassControl.value = 0;
+  midControl.value = 0;
+  trebleControl.value = 0;
+
+  sendEQSettings(); // Reuse the function that updates values and UI
+});
+
+const presets = {
+  boostBass: { bass: 19, mid: -30, treble: -30 },
+  boostMetal: { bass: 30, mid: 0, treble: 0 },
+  cancelNoise: { bass: 0, mid: -30, treble: -30 }
+};
+
+document.querySelectorAll('.preset').forEach(button => {
+  button.addEventListener('click', () => {
+    const presetName = button.getAttribute('data-preset');
+    const settings = presets[presetName];
+
+    if (settings) {
+      bassControl.value = settings.bass;
+      midControl.value = settings.mid;
+      trebleControl.value = settings.treble;
+
+      sendEQSettings(); // Update UI and filters
+    }
+  });
+});
