@@ -3,7 +3,7 @@
   "name": "EQ",
   "version": "1.0",
   "description": "Open Source EQ",
-  "permissions": ["scripting", "activeTab"],
+  "permissions": ["scripting", "activeTab", "storage"],
   "action": {
     "default_popup": "index.html",
     "default_title": "EQ",
