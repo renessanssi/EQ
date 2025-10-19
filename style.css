@@ -1,8 +1,9 @@
+
 /* ================== Base Styles ================== */
 body {
-  font-family: 'Segoe UI', Arial, sans-serif;
+  font-family: "Luckiest Guy", cursive;
   background-color: #121212;
-  color: #e0e0e0;
+  color: #9e9e9e;
   padding: 20px;
   display: flex;
   flex-direction: column;
@@ -12,6 +13,7 @@ body {
 }
 
 h1 {
+  font-family: "New Rocker", system-ui;
   margin-bottom: 20px;
 }
 
@@ -88,13 +90,13 @@ input[type="range"] {
 
 /* Distinct slider accent colors can be added individually */
 #bass {
-  accent-color: #ffa500;
+  accent-color: #fdfbd4;
 }
 #mid {
-  accent-color: #ffa500;
+  accent-color: #fdfbd4;
 }
 #treble {
-  accent-color: #ffa500;
+  accent-color: #fdfbd4;
 }
 
 /* ================== Buttons ================== */
@@ -107,6 +109,7 @@ input[type="range"] {
 }
 
 button {
+  font-family: inherit;
   background-color: #1f1f1f;
   color: #e0e0e0;
   border: 1px solid #333;
@@ -123,7 +126,7 @@ button:hover {
 }
 
 button:active {
-  background-color: #ffa500;
+  background-color: #fdfbd4;
   color: #000;
 }
 
@@ -147,6 +150,6 @@ button:active {
 }
 
 .preset.active {
-  background-color: #ffa500;
+  background-color: #fdfbd4;
   color: #000;
 }
