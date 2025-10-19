@@ -89,3 +89,8 @@ button:active {
 #resetBtn:hover {
   background-color: #3a3a3a;
 }
+
+.preset.active {
+  background-color: #1db954;
+  color: #000;
+}

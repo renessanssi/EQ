@@ -21,28 +21,20 @@ let currentTabId = null;
 // 🔄 Load saved equalizer settings for this specific tab
 // ====================================================
 async function loadTabSettings(tabId) {
-  // Get EQ settings stored in Chrome’s session storage for this tab
   const data = await chrome.storage.session.get(`eq_${tabId}`);
-
-  // If no saved data, default to flat EQ
   const settings = data[`eq_${tabId}`] || { bass: 0, mid: 0, treble: 0 };
 
-  // Update slider positions
   bassControl.value = settings.bass;
   midControl.value = settings.mid;
   trebleControl.value = settings.treble;
 
-  // Update numeric labels
-  bassValLabel.textContent = settings.bass;
-  midValLabel.textContent = settings.mid;
-  trebleValLabel.textContent = settings.treble;
+  updateValueLabels(settings);
 }
 
 // ====================================================
 // 💾 Save equalizer settings (per tab, not global)
 // ====================================================
 async function saveTabSettings(tabId, settings) {
-  // Save under a unique key like "eq_123" (123 = tabId)
   await chrome.storage.session.set({ [`eq_${tabId}`]: settings });
 }
 
@@ -50,30 +42,20 @@ async function saveTabSettings(tabId, settings) {
 // 📡 Send EQ settings to the tab’s content script
 // ====================================================
 function sendEQSettings() {
-  // Make sure we have an active tab
   if (!currentTabId) return;
 
-  // Gather slider values and convert them to numbers
   const eqSettings = {
     bass: Number(bassControl.value),
     mid: Number(midControl.value),
     treble: Number(trebleControl.value),
   };
 
-  // Update displayed values in the popup UI
-  bassValLabel.textContent = eqSettings.bass;
-  midValLabel.textContent = eqSettings.mid;
-  trebleValLabel.textContent = eqSettings.treble;
-
-  // Save the settings for this specific tab
+  updateValueLabels(eqSettings);
   saveTabSettings(currentTabId, eqSettings);
 
-  // Use chrome.scripting to send EQ settings into the active tab
   chrome.scripting.executeScript({
     target: { tabId: currentTabId },
     func: (settings) => {
-      // Inside the tab’s environment:
-      // Dispatch a custom event that content.js listens to
       window.dispatchEvent(new CustomEvent('updateEqualizer', { detail: settings }));
     },
     args: [eqSettings],
@@ -81,66 +63,109 @@ function sendEQSettings() {
 }
 
 // ====================================================
+// 🎨 Update numeric labels (with gain coloring)
+// ====================================================
+function updateValueLabels(values) {
+  const colorValue = (val) =>
+    val > 0 ? '#1db954' : val < 0 ? '#ff5c5c' : '#9e9e9e';
+
+  bassValLabel.textContent = values.bass;
+  midValLabel.textContent = values.mid;
+  trebleValLabel.textContent = values.treble;
+
+  bassValLabel.style.color = colorValue(values.bass);
+  midValLabel.style.color = colorValue(values.mid);
+  trebleValLabel.style.color = colorValue(values.treble);
+}
+
+// ====================================================
 // 🪟 When popup opens
 // ====================================================
 chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
-  // Get the current tab ID
   if (!tabs[0]?.id) return;
   currentTabId = tabs[0].id;
 
-  // Make sure content.js is running in that tab
   await chrome.scripting.executeScript({
     target: { tabId: currentTabId },
     files: ['content.js'],
   });
 
-  // Load saved settings (if any) for this tab
   await loadTabSettings(currentTabId);
-
-  // Immediately sync popup and EQ
   sendEQSettings();
 });
 
 // ====================================================
 // 🎛️ Slider event listeners (real-time updates)
 // ====================================================
-bassControl.addEventListener('input', sendEQSettings);
-midControl.addEventListener('input', sendEQSettings);
-trebleControl.addEventListener('input', sendEQSettings);
-
-// ====================================================
-// ♻️ Reset button (restore flat EQ)
-// ====================================================
-document.getElementById('resetBtn').addEventListener('click', () => {
-  // Reset sliders to neutral position
-  bassControl.value = midControl.value = trebleControl.value = 0;
-  sendEQSettings(); // Apply the reset instantly
+[bassControl, midControl, trebleControl].forEach((slider) => {
+  slider.addEventListener('input', sendEQSettings);
 });
 
 // ====================================================
-// 🎵 Preset equalizer profiles
+// ♻️ Animated Reset button
 // ====================================================
-// Each preset defines gain values for bass, mid, and treble bands
+function animateToZero(slider) {
+  const step = (0 - slider.value) / 15;
+  const interval = setInterval(() => {
+    slider.value = parseFloat(slider.value) + step;
+    if (Math.abs(slider.value) < 1) {
+      slider.value = 0;
+      clearInterval(interval);
+      sendEQSettings(); // keep synced after reset
+    }
+  }, 10);
+}
+
+document.getElementById('resetBtn').addEventListener('click', () => {
+  ['bass', 'mid', 'treble'].forEach((id) =>
+    animateToZero(document.getElementById(id))
+  );
+
+  // remove preset highlight
+  document.querySelectorAll('.preset').forEach((b) => b.classList.remove('active'));
+});
+
+// ====================================================
+// 🎵 Preset equalizer profiles (with smooth slide)
+// ====================================================
 const presets = {
-  boostBass:    { bass: 19, mid: -30, treble: -30 },
-  boostMetal:   { bass: 30, mid: 0,  treble: 0 },
-  boostPop:     { bass: 0,  mid: 11, treble: 30 },
-  cancelNoise:  { bass: 0,  mid: -30, treble: -30 },
+  boostBass: { bass: 19, mid: -30, treble: -30 },
+  boostMetal: { bass: 30, mid: 0, treble: 0 },
+  boostPop: { bass: 0, mid: 11, treble: 30 },
+  cancelNoise: { bass: 0, mid: -30, treble: -30 },
 };
 
-// Find all preset buttons and set up click handlers
+// Animate a slider to a target value
+function animateSliderTo(slider, target) {
+  const steps = 15;
+  const stepValue = (target - slider.value) / steps;
+  let count = 0;
+
+  const interval = setInterval(() => {
+    slider.value = parseFloat(slider.value) + stepValue;
+    count++;
+    if (count >= steps) {
+      slider.value = target; // ensure exact final value
+      clearInterval(interval);
+    }
+    sendEQSettings(); // update labels, color, and content.js each step
+  }, 10);
+}
+
+// Apply preset with smooth animation
 document.querySelectorAll('.preset').forEach((button) => {
   button.addEventListener('click', () => {
-    const presetName = button.getAttribute('data-preset'); // e.g., "boostBass"
+    const presetName = button.getAttribute('data-preset');
     const settings = presets[presetName];
-    if (settings) {
-      // Apply the preset to sliders
-      bassControl.value = settings.bass;
-      midControl.value = settings.mid;
-      trebleControl.value = settings.treble;
+    if (!settings) return;
 
-      // Send updated settings to the tab
-      sendEQSettings();
-    }
+    // Animate each slider to its target value
+    animateSliderTo(bassControl, settings.bass);
+    animateSliderTo(midControl, settings.mid);
+    animateSliderTo(trebleControl, settings.treble);
+
+    // Highlight the active preset
+    document.querySelectorAll('.preset').forEach((b) => b.classList.remove('active'));
+    button.classList.add('active');
   });
 });
