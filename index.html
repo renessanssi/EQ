@@ -1,33 +1,47 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>3-Band Equalizer</title>
   <link rel="stylesheet" href="style.css" />
 </head>
+
 <body>
-  <div class="equalizer">
-    <div class="slider-container">
-      <label>60 Hz</label>
-      <input type="range" id="bass" min="-30" max="30" value="0" step="1" />
-      <span id="bassVal">0</span>
+  <h1>EQ</h1>
+
+  <div class="equalizer-wrapper">
+    <!-- Preamp / Master Volume Slider -->
+    <div class="preamp-container">
+      <label class="preamp-label">PREAMP</label>
+      <input type="range" id="preamp" min="0" max="100" value="100" step="1" />
+      <span id="preampVal">100</span>
     </div>
-    <div class="slider-container">
-      <label>1 kHz</label>
-      <input type="range" id="mid" min="-30" max="30" value="0" step="1" />
-      <span id="midVal">0</span>
-    </div>
-    <div class="slider-container">
-      <label>12 kHz</label>
-      <input type="range" id="treble" min="-30" max="30" value="0" step="1" />
-      <span id="trebleVal">0</span>
+
+    <div class="equalizer">
+      <div class="slider-container">
+        <label>60 Hz</label>
+        <input type="range" id="bass" min="-30" max="30" value="0" step="1" />
+        <span id="bassVal">0</span>
+      </div>
+      <div class="slider-container">
+        <label>1 kHz</label>
+        <input type="range" id="mid" min="-30" max="30" value="0" step="1" />
+        <span id="midVal">0</span>
+      </div>
+      <div class="slider-container">
+        <label>12 kHz</label>
+        <input type="range" id="treble" min="-30" max="30" value="0" step="1" />
+        <span id="trebleVal">0</span>
+      </div>
     </div>
   </div>
+
   <!-- Reset Button -->
   <div class="controls">
     <button id="resetBtn">Reset</button>
-    
+
     <!-- Preset Buttons -->
     <div class="presets">
       <button class="preset" data-preset="boostBass">Bass</button>
@@ -38,4 +52,5 @@
   </div>
   <script src="script.js"></script>
 </body>
+
 </html>

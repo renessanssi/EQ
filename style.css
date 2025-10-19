@@ -1,3 +1,4 @@
+/* ================== Base Styles ================== */
 body {
   font-family: 'Segoe UI', Arial, sans-serif;
   background-color: #121212;
@@ -10,10 +11,53 @@ body {
   min-width: 640px;
 }
 
+h1 {
+  margin-bottom: 20px;
+}
+
+/* ================== Equalizer Wrapper ================== */
+.equalizer-wrapper {
+  position: relative;
+  display: flex;
+  justify-content: center; /* centers the main EQ sliders */
+  align-items: flex-end;
+  gap: 24px;
+}
+
+/* ================== Preamp Slider ================== */
+.preamp-container {
+  position: absolute; /* floats independently */
+  left: -140px; /* distance from main EQ sliders */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.preamp-label {
+  font-weight: bold;
+  color: #9e9e9e; /* visually distinct */
+  font-size: 15px;
+  margin-bottom: 8px;
+}
+
+#preamp {
+  height: 140px;
+  width: 120px;
+  accent-color: #af3c3c;
+}
+
+#preampVal {
+  margin-top: 8px;
+  font-size: 13px;
+  color: #9e9e9e;
+}
+
+/* ================== Main EQ Sliders ================== */
 .equalizer {
   display: flex;
   gap: 24px;
-  margin-bottom: 20px;
+  align-items: flex-end;
 }
 
 .slider-container {
@@ -36,19 +80,30 @@ span {
 }
 
 input[type="range"] {
-    writing-mode: vertical-lr;
-    direction: rtl;
-
-    width: 100px;
-    height: 100px;
+  writing-mode: vertical-lr;
+  direction: rtl;
+  width: 100px;
+  height: 100px;
 }
 
-/* 🔘 Buttons */
+/* Distinct slider accent colors can be added individually */
+#bass {
+  accent-color: #ffa500;
+}
+#mid {
+  accent-color: #ffa500;
+}
+#treble {
+  accent-color: #ffa500;
+}
+
+/* ================== Buttons ================== */
 .controls {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 10px;
+  margin-top: 20px;
 }
 
 button {
@@ -68,18 +123,11 @@ button:hover {
 }
 
 button:active {
-  background-color: #1db954;
+  background-color: #ffa500;
   color: #000;
 }
 
-/* Preset buttons layout */
-.presets {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-  justify-content: center;
-}
-
+/* Reset Button */
 #resetBtn {
   background-color: #272727;
   color: #ff5c5c;
@@ -90,7 +138,15 @@ button:active {
   background-color: #3a3a3a;
 }
 
+/* Preset Buttons */
+.presets {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
 .preset.active {
-  background-color: #1db954;
+  background-color: #ffa500;
   color: #000;
 }
