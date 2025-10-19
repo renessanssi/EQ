@@ -7,7 +7,18 @@
   "action": {
     "default_popup": "popup/index.html",
     "default_title": "EQ",
-    "default_icon": "./assets/icon.png"
+    "default_icon": {
+      "16": "assets/icon128.png",
+      "32": "assets/icon128.png",
+      "48": "assets/icon128.png",
+      "128": "assets/icon128.png"
+    }
+  },
+  "icons": {
+    "16": "assets/icon128.png",
+    "32": "assets/icon128.png",
+    "48": "assets/icon128.png",
+    "128": "assets/icon128.png"
   },
   "host_permissions": ["<all_urls>"]
 }
