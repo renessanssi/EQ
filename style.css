@@ -1,9 +1,19 @@
+:root {
+  --bg-color: #121212;
+  --text-color: #9e9e9e;
+  --slider-accent: #fdfbd4;
+  --button-bg: #1f1f1f;
+  --button-hover: #2b2b2b;
+  --button-active-bg: #fdfbd4;
+  --button-active-color: #000;
+  --preamp-color: #ff5c5c;
+  --gap: 24px;
+}
 
-/* ================== Base Styles ================== */
 body {
   font-family: "Luckiest Guy", cursive;
-  background-color: #121212;
-  color: #9e9e9e;
+  background-color: var(--bg-color);
+  color: var(--text-color);
   padding: 20px;
   display: flex;
   flex-direction: column;
@@ -14,22 +24,23 @@ body {
 
 h1 {
   font-family: "New Rocker", system-ui;
-  margin-bottom: 20px;
+  margin-bottom: 30px;
+  cursor: default;
 }
 
-/* ================== Equalizer Wrapper ================== */
 .equalizer-wrapper {
   position: relative;
   display: flex;
-  justify-content: center; /* centers the main EQ sliders */
+  justify-content: center;
   align-items: flex-end;
-  gap: 24px;
+  gap: var(--gap);
 }
 
-/* ================== Preamp Slider ================== */
 .preamp-container {
-  position: absolute; /* floats independently */
-  left: -140px; /* distance from main EQ sliders */
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  transform: translateX(-140px) translateY(20px);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -38,28 +49,27 @@ h1 {
 
 .preamp-label {
   font-weight: bold;
-  color: #9e9e9e; /* visually distinct */
   font-size: 15px;
+  color: var(--text-color);
   margin-bottom: 8px;
 }
 
 #preamp {
-  height: 140px;
-  width: 120px;
-  accent-color: #af3c3c;
+  height: 150px;
+  accent-color: var(--preamp-color);
 }
 
 #preampVal {
   margin-top: 8px;
   font-size: 13px;
-  color: #9e9e9e;
+  color: var(--text-color);
 }
 
-/* ================== Main EQ Sliders ================== */
 .equalizer {
   display: flex;
-  gap: 24px;
+  gap: var(--gap);
   align-items: flex-end;
+  position: relative; /* ensures toggle doesn’t affect layout */
 }
 
 .slider-container {
@@ -78,28 +88,18 @@ label {
 span {
   margin-top: 8px;
   font-size: 13px;
-  color: #9e9e9e;
+  color: var(--text-color);
 }
 
 input[type="range"] {
+  cursor: pointer;
   writing-mode: vertical-lr;
   direction: rtl;
   width: 100px;
   height: 100px;
+  accent-color: var(--slider-accent);
 }
 
-/* Distinct slider accent colors can be added individually */
-#bass {
-  accent-color: #fdfbd4;
-}
-#mid {
-  accent-color: #fdfbd4;
-}
-#treble {
-  accent-color: #fdfbd4;
-}
-
-/* ================== Buttons ================== */
 .controls {
   display: flex;
   flex-direction: column;
@@ -110,8 +110,8 @@ input[type="range"] {
 
 button {
   font-family: inherit;
-  background-color: #1f1f1f;
-  color: #e0e0e0;
+  background-color: var(--button-bg);
+  color: var(--text-color);
   border: 1px solid #333;
   border-radius: 6px;
   padding: 6px 14px;
@@ -121,35 +121,24 @@ button {
 }
 
 button:hover {
-  background-color: #2b2b2b;
+  background-color: var(--button-hover);
   border-color: #444;
 }
 
 button:active {
-  background-color: #fdfbd4;
-  color: #000;
+  background-color: var(--button-active-bg);
+  color: var(--button-active-color);
 }
 
-/* Reset Button */
-#resetBtn {
-  background-color: #272727;
-  color: #ff5c5c;
-  border: 1px solid #444;
-}
-
-#resetBtn:hover {
-  background-color: #3a3a3a;
-}
-
-/* Preset Buttons */
 .presets {
   display: flex;
+  margin-top: 20px;
   gap: 8px;
   flex-wrap: wrap;
   justify-content: center;
 }
 
 .preset.active {
-  background-color: #fdfbd4;
-  color: #000;
+  background-color: var(--slider-accent);
+  color: var(--button-active-color);
 }

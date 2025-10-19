@@ -22,15 +22,29 @@ let currentTabId = null;
 // 🔄 Load saved equalizer + preamp settings for this tab
 // ====================================================
 async function loadTabSettings(tabId) {
-  const data = await chrome.storage.session.get(`eq_${tabId}`);
+  const data = await chrome.storage.session.get([`eq_${tabId}`, `eq_custom_${tabId}`]);
   const settings = data[`eq_${tabId}`] || { bass: 0, mid: 0, treble: 0, preamp: 100 };
+  const savedCustom = data[`eq_custom_${tabId}`];
 
   bassControl.value = settings.bass;
   midControl.value = settings.mid;
   trebleControl.value = settings.treble;
   preampControl.value = settings.preamp;
 
+  // Initialize lastCustomValues with loaded custom sliders if exists
+  lastCustomValues = savedCustom || { bass: settings.bass, mid: settings.mid, treble: settings.treble };
+
   updateValueLabels(settings);
+
+  // Highlight custom button if current sliders match saved custom
+  if (savedCustom &&
+      savedCustom.bass === settings.bass &&
+      savedCustom.mid === settings.mid &&
+      savedCustom.treble === settings.treble) {
+    customBtn.classList.add('active');
+  } else {
+    customBtn.classList.remove('active');
+  }
 }
 
 // ====================================================
@@ -110,11 +124,16 @@ chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
 // ♻️ Animated Reset button (preamp excluded)
 // ====================================================
 function animateToZero(slider) {
-  const step = (0 - slider.value) / 15;
+  const steps = 15;
+  const stepValue = (0 - slider.value) / steps;
+  let count = 0;
+
   const interval = setInterval(() => {
-    slider.value = parseFloat(slider.value) + step;
-    if (Math.abs(slider.value) < 1) {
-      slider.value = 0;
+    slider.value = parseFloat(slider.value) + stepValue;
+    count++;
+
+    if (count >= steps) {
+      slider.value = 0; // ensure it lands exactly at 0
       clearInterval(interval);
       sendEQSettings();
     }
@@ -128,6 +147,7 @@ document.getElementById('resetBtn').addEventListener('click', () => {
 
   // remove preset highlight
   document.querySelectorAll('.preset').forEach((b) => b.classList.remove('active'));
+  customBtn.classList.remove('active');
 });
 
 // ====================================================
@@ -137,7 +157,7 @@ const presets = {
   boostBass: { bass: 19, mid: -30, treble: -30 },
   boostMetal: { bass: 30, mid: 0, treble: 0 },
   boostPop: { bass: 0, mid: 11, treble: 30 },
-  cancelNoise: { bass: 0, mid: -30, treble: -30 },
+  boostSoft: { bass: 0, mid: -30, treble: -30 },
 };
 
 // Animate a slider to a target value
@@ -157,7 +177,48 @@ function animateSliderTo(slider, target) {
   }, 10);
 }
 
-// Apply preset with smooth animation (preamp unaffected)
+// ====================================================
+// Custom button logic
+// ====================================================
+const customBtn = document.getElementById('customBtn');
+let lastCustomValues = { bass: 0, mid: 0, treble: 0 };
+
+// Whenever a slider is moved manually
+[bassControl, midControl, trebleControl].forEach((slider) => {
+  slider.addEventListener('input', () => {
+    // Remove active from other presets
+    document.querySelectorAll('.preset').forEach((b) => b.classList.remove('active'));
+
+    // Highlight the custom button
+    customBtn.classList.add('active');
+
+    // Save current sliders as last custom values
+    lastCustomValues = {
+      bass: Number(bassControl.value),
+      mid: Number(midControl.value),
+      treble: Number(trebleControl.value),
+    };
+
+    // Persist last custom values to storage
+    if (currentTabId) {
+      chrome.storage.session.set({ [`eq_custom_${currentTabId}`]: lastCustomValues });
+    }
+  });
+});
+
+// Apply last custom values when Custom button clicked
+customBtn.addEventListener('click', () => {
+  animateSliderTo(bassControl, lastCustomValues.bass);
+  animateSliderTo(midControl, lastCustomValues.mid);
+  animateSliderTo(trebleControl, lastCustomValues.treble);
+
+  document.querySelectorAll('.preset').forEach((b) => b.classList.remove('active'));
+  customBtn.classList.add('active');
+});
+
+// ====================================================
+// Apply preset buttons
+// ====================================================
 document.querySelectorAll('.preset').forEach((button) => {
   button.addEventListener('click', () => {
     const presetName = button.getAttribute('data-preset');
@@ -170,5 +231,10 @@ document.querySelectorAll('.preset').forEach((button) => {
 
     document.querySelectorAll('.preset').forEach((b) => b.classList.remove('active'));
     button.classList.add('active');
+
+    // Save presets as tab EQ settings
+    if (currentTabId) {
+      chrome.storage.session.set({ [`eq_${currentTabId}`]: { ...settings, preamp: preampControl.value } });
+    }
   });
 });
