@@ -1,28 +1,38 @@
 body {
-    font-family: Arial, sans-serif;
-    padding: 20px;
-    display: flex;
-    justify-content: center;
+  font-family: 'Segoe UI', Arial, sans-serif;
+  background-color: #121212;
+  color: #e0e0e0;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 640px;
 }
 
 .equalizer {
-    display: flex;
-    gap: 20px; /* Space between sliders */
+  display: flex;
+  gap: 24px;
+  margin-bottom: 20px;
 }
 
 .slider-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center; /* Center the slider and label */
-    text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
 }
 
 label {
-    margin-bottom: 10px; /* Space between label and slider */
+  font-size: 14px;
+  margin-bottom: 8px;
+  color: #b0b0b0;
 }
 
 span {
-    margin-top: 10px;
+  margin-top: 8px;
+  font-size: 13px;
+  color: #9e9e9e;
 }
 
 input[type="range"] {
@@ -31,4 +41,51 @@ input[type="range"] {
 
     width: 100px;
     height: 100px;
+}
+
+/* 🔘 Buttons */
+.controls {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+button {
+  background-color: #1f1f1f;
+  color: #e0e0e0;
+  border: 1px solid #333;
+  border-radius: 6px;
+  padding: 6px 14px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: 0.2s;
+}
+
+button:hover {
+  background-color: #2b2b2b;
+  border-color: #444;
+}
+
+button:active {
+  background-color: #1db954;
+  color: #000;
+}
+
+/* Preset buttons layout */
+.presets {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+#resetBtn {
+  background-color: #272727;
+  color: #ff5c5c;
+  border: 1px solid #444;
+}
+
+#resetBtn:hover {
+  background-color: #3a3a3a;
 }
