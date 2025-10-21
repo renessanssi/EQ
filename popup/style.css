@@ -40,19 +40,28 @@ h1 {
   display: flex;
   justify-content: center;
   align-items: flex-end;
-  gap: var(--gap);
+  gap: 60px;
 }
 
+/* The 3-band section stays centered no matter what */
+.equalizer-center {
+  display: flex;
+  justify-content: center;
+  flex: 1;
+}
+
+/* The preamp floats left, but doesn’t push center content */
 .preamp-container {
   position: absolute;
-  left: -225px; /* distance from the left edge of the wrapper */
-  bottom: 0;   /* align to bottom */
+  left: 0;
+  bottom: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
-  transform: translateY(20px); /* only vertical offset if needed */
+  transform: translateX(-400%) translateY(20px); /* shift it left visually */
 }
+
 
 .preamp-label {
   font-weight: bold;

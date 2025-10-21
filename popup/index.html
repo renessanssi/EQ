@@ -15,31 +15,33 @@
   <h1>EQ</h1>
 
   <div class="equalizer-wrapper">
-    <!-- Preamp / Master Volume Slider -->
     <div class="preamp-container">
       <label class="preamp-label">PREAMP</label>
       <input type="range" id="preamp" min="0" max="100" value="100" step="1" />
       <span id="preampVal">100</span>
     </div>
 
-    <div class="equalizer">
-      <div class="slider-container">
-        <label>60 Hz</label>
-        <input type="range" id="bass" min="-30" max="30" value="0" step="1" />
-        <span id="bassVal">0</span>
-      </div>
-      <div class="slider-container">
-        <label>1 kHz</label>
-        <input type="range" id="mid" min="-30" max="30" value="0" step="1" />
-        <span id="midVal">0</span>
-      </div>
-      <div class="slider-container">
-        <label>12 kHz</label>
-        <input type="range" id="treble" min="-30" max="30" value="0" step="1" />
-        <span id="trebleVal">0</span>
+    <!-- Wrap the 3 sliders in their own centered group -->
+    <div class="equalizer-center">
+      <div class="equalizer">
+        <div class="slider-container">
+          <label>60 Hz</label>
+          <input type="range" id="bass" min="-30" max="30" value="0" step="1" />
+          <span id="bassVal">0</span>
+        </div>
+        <div class="slider-container">
+          <label>1 kHz</label>
+          <input type="range" id="mid" min="-30" max="30" value="0" step="1" />
+          <span id="midVal">0</span>
+        </div>
+        <div class="slider-container">
+          <label>12 kHz</label>
+          <input type="range" id="treble" min="-30" max="30" value="0" step="1" />
+          <span id="trebleVal">0</span>
+        </div>
       </div>
     </div>
-  </div>    
+  </div>
 
   <!-- Preset Buttons -->
   <div class="presets">
