@@ -8,6 +8,7 @@
   --button-active-color: #000;
   --preamp-color: #ff5c5c;
   --gap: 24px;
+  --toggle-color: #d6c372;
 }
 
 body {
@@ -241,4 +242,36 @@ input[type="range"]:active::-moz-range-thumb {
 /* Focus */
 input[type="range"]:focus {
   outline: none;
+}
+
+/* Wrapper styling (optional) */
+.toggle-wrapper {
+  position: fixed;
+  top: 20px;      /* distance from top */
+  right: 20px;    /* distance from right */
+  z-index: 9999;  /* stay on top of other elements */
+}
+
+/* Hide the checkbox itself */
+.circle-toggle {
+  display: none;
+}
+
+/* The circular toggle */
+.toggle-wrapper label {
+  position: relative;
+  display: block;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  border: 2px solid #333;
+  background-color: transparent;
+  cursor: pointer;
+  transition: background-color 0.3s, border-color 0.3s;
+}
+
+/* Fill circle when checked */
+.circle-toggle:checked + label {
+  background-color: var(--toggle-color);
+  border-color: #000;
 }

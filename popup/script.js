@@ -1,12 +1,14 @@
-import { dom }     from './dom.js';
+import { dom } from './dom.js';
 import { presets } from './presets.js';
 
 let currentTabId = null;
 let lastCustomValues = { bass: 0, mid: 0, treble: 0 };
 
-// Update numeric labels & color
+// -------------------------------
+// Update numeric labels & colors
+// -------------------------------
 function updateValueLabels(values) {
-  const colorValue = (val) => val > 0 ? '#1db954' : val < 0 ? '#ff5c5c' : '#9e9e9e';
+  const colorValue = (val) => (val > 0 ? '	#d6c372' : val < 0 ? '#bec7c7' : '#2f2f2fff');
 
   dom.bassValLabel.textContent = values.bass;
   dom.midValLabel.textContent = values.mid;
@@ -16,41 +18,19 @@ function updateValueLabels(values) {
   dom.bassValLabel.style.color = colorValue(values.bass);
   dom.midValLabel.style.color = colorValue(values.mid);
   dom.trebleValLabel.style.color = colorValue(values.treble);
-  dom.preampValLabel.style.color = '#9e9e9e'; // preamp stays neutral
+  dom.preampValLabel.style.color = '#9e9e9e';
 }
 
+// -------------------------------
 // Save EQ settings per tab
+// -------------------------------
 async function saveTabSettings(tabId, settings) {
   await chrome.storage.session.set({ [`eq_${tabId}`]: settings });
 }
 
-// Load EQ settings for a tab
-async function loadTabSettings(tabId) {
-  const data = await chrome.storage.session.get([`eq_${tabId}`, `eq_custom_${tabId}`]);
-  const settings = data[`eq_${tabId}`] || { bass: 0, mid: 0, treble: 0, preamp: 100 };
-  const savedCustom = data[`eq_custom_${tabId}`];
-
-  dom.bassControl.value = settings.bass;
-  dom.midControl.value = settings.mid;
-  dom.trebleControl.value = settings.treble;
-  dom.preampControl.value = settings.preamp;
-
-  lastCustomValues = savedCustom || { bass: settings.bass, mid: settings.mid, treble: settings.treble };
-
-  updateValueLabels(settings);
-
-  // Highlight custom button if current sliders match saved custom
-  if (savedCustom &&
-      savedCustom.bass === settings.bass &&
-      savedCustom.mid === settings.mid &&
-      savedCustom.treble === settings.treble) {
-    dom.customBtn.classList.add('active');
-  } else {
-    dom.customBtn.classList.remove('active');
-  }
-}
-
-// Send EQ settings to content script
+// -------------------------------
+// Send EQ to content.js
+// -------------------------------
 function sendEQSettings() {
   if (!currentTabId) return;
 
@@ -73,7 +53,18 @@ function sendEQSettings() {
   });
 }
 
-// Animate slider to target value
+// -------------------------------
+// Only send if EQ toggle is ON
+// -------------------------------
+function sendEQSettingsIfEnabled() {
+  if (document.getElementById('eqToggle').checked) {
+    sendEQSettings();
+  }
+}
+
+// -------------------------------
+// Slider animation helpers
+// -------------------------------
 function animateSliderTo(slider, target) {
   const steps = 15;
   const stepValue = (target - slider.value) / steps;
@@ -86,56 +77,89 @@ function animateSliderTo(slider, target) {
       slider.value = target;
       clearInterval(interval);
     }
-    sendEQSettings();
+    sendEQSettingsIfEnabled();
   }, 10);
 }
 
-// Animate slider to zero
 function animateToZero(slider) {
   animateSliderTo(slider, 0);
 }
 
-// Remove highlight from all presets
+// -------------------------------
+// Preset helpers
+// -------------------------------
 function removeActivePresets() {
   dom.presetButtons.forEach((b) => b.classList.remove('active'));
   dom.customBtn.classList.remove('active');
 }
 
-// =====================
-// INITIALIZE POPUP
-// =====================
+// -------------------------------
+// Initialize popup
+// -------------------------------
 chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
   const tab = tabs[0];
   if (!tab?.id) return;
   currentTabId = tab.id;
 
-  // Only run on http(s) pages
-  if (tab.url && (tab.url.startsWith('http://') || tab.url.startsWith('https://'))) {
-    try {
-      await chrome.scripting.executeScript({
-        target: { tabId: currentTabId },
-        files: ['content.js'],
-      });
-    } catch (err) {
-      console.error('Failed to inject content script:', err);
-    }
+  const data = await chrome.storage.session.get([
+    `eq_${currentTabId}`,
+    `eq_custom_${currentTabId}`,
+    `eqEnabled_${currentTabId}`,
+  ]);
 
-    await loadTabSettings(currentTabId);
-    sendEQSettings();
-  } else {
-    console.log('EQ cannot be applied on this page:', tab.url);
+  const settings = data[`eq_${currentTabId}`] || { bass: 0, mid: 0, treble: 0, preamp: 100 };
+  const savedCustom = data[`eq_custom_${currentTabId}`];
+
+  // Set sliders to saved values
+  dom.bassControl.value = settings.bass;
+  dom.midControl.value = settings.mid;
+  dom.trebleControl.value = settings.treble;
+  dom.preampControl.value = settings.preamp;
+
+  lastCustomValues = savedCustom || { bass: settings.bass, mid: settings.mid, treble: settings.treble };
+  updateValueLabels(settings);
+
+  if (savedCustom &&
+      savedCustom.bass === settings.bass &&
+      savedCustom.mid === settings.mid &&
+      savedCustom.treble === settings.treble) {
+    dom.customBtn.classList.add('active');
   }
+
+  // Initialize toggle
+  const eqToggle = document.getElementById('eqToggle');
+  eqToggle.checked = data[`eqEnabled_${currentTabId}`] || false;
+
+  // Apply current settings immediately if toggle is ON
+  if (eqToggle.checked) sendEQSettings();
+
+  eqToggle.addEventListener('change', () => {
+    const enabled = eqToggle.checked;
+    chrome.storage.session.set({ [`eqEnabled_${currentTabId}`]: enabled });
+    chrome.runtime.sendMessage({ type: 'toggleChanged', enabled, tabId: currentTabId });
+
+    // Send current settings immediately when turning ON
+    if (enabled) sendEQSettings();
+  });
 });
 
-// =====================
-// EVENT LISTENERS
-// =====================
-
-// Sliders (send EQ + update custom button)
+// -------------------------------
+// Event listeners for sliders
+// -------------------------------
 [dom.bassControl, dom.midControl, dom.trebleControl, dom.preampControl].forEach((slider) => {
   slider.addEventListener('input', () => {
-    sendEQSettings();
+    // Always update labels and internal state
+    updateValueLabels({
+      bass: Number(dom.bassControl.value),
+      mid: Number(dom.midControl.value),
+      treble: Number(dom.trebleControl.value),
+      preamp: Number(dom.preampControl.value),
+    });
 
+    // Only send EQ if toggle ON
+    sendEQSettingsIfEnabled();
+
+    // Update custom preset tracking
     if (slider !== dom.preampControl) {
       removeActivePresets();
       dom.customBtn.classList.add('active');
@@ -144,44 +168,92 @@ chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
         mid: Number(dom.midControl.value),
         treble: Number(dom.trebleControl.value),
       };
-      if (currentTabId) {
-        chrome.storage.session.set({ [`eq_custom_${currentTabId}`]: lastCustomValues });
-      }
+      chrome.storage.session.set({ [`eq_custom_${currentTabId}`]: lastCustomValues });
     }
   });
 });
 
-// Reset button
+// -------------------------------
+// Buttons
+// -------------------------------
 dom.resetBtn.addEventListener('click', () => {
+  // Reset sliders to zero with animation
   [dom.bassControl, dom.midControl, dom.trebleControl].forEach(animateToZero);
+
+  // Update labels immediately
+  updateValueLabels({
+    bass: 0,
+    mid: 0,
+    treble: 0,
+    preamp: Number(dom.preampControl.value), // keep preamp unchanged
+  });
+
+  // Save reset values to session storage
+  chrome.storage.session.set({
+    [`eq_${currentTabId}`]: {
+      bass: 0,
+      mid: 0,
+      treble: 0,
+      preamp: Number(dom.preampControl.value),
+    }
+  });
+
+  // Remove active state from presets
   removeActivePresets();
+
+  // Only send to content.js if toggle ON
+  if (document.getElementById('eqToggle').checked) {
+    sendEQSettings();
+  }
 });
 
-// Custom button
 dom.customBtn.addEventListener('click', () => {
   animateSliderTo(dom.bassControl, lastCustomValues.bass);
   animateSliderTo(dom.midControl, lastCustomValues.mid);
   animateSliderTo(dom.trebleControl, lastCustomValues.treble);
+
   removeActivePresets();
   dom.customBtn.classList.add('active');
+
+  sendEQSettingsIfEnabled();
 });
 
-// Preset buttons
 dom.presetButtons.forEach((button) => {
   button.addEventListener('click', () => {
     const presetName = button.getAttribute('data-preset');
     const settings = presets[presetName];
     if (!settings) return;
 
+    // Animate sliders to preset values
     animateSliderTo(dom.bassControl, settings.bass);
     animateSliderTo(dom.midControl, settings.mid);
     animateSliderTo(dom.trebleControl, settings.treble);
 
+    // Update labels immediately (so user sees changes even if toggle off)
+    updateValueLabels({
+      bass: settings.bass,
+      mid: settings.mid,
+      treble: settings.treble,
+      preamp: Number(dom.preampControl.value),
+    });
+
+    // Save preset values to session (always)
+    chrome.storage.session.set({
+      [`eq_${currentTabId}`]: {
+        bass: settings.bass,
+        mid: settings.mid,
+        treble: settings.treble,
+        preamp: Number(dom.preampControl.value),
+      }
+    });
+
+    // Remove active state from other presets
     removeActivePresets();
     button.classList.add('active');
 
-    if (currentTabId) {
-      chrome.storage.session.set({ [`eq_${currentTabId}`]: { ...settings, preamp: dom.preampControl.value } });
+    // Only send to content.js if EQ toggle is ON
+    if (document.getElementById('eqToggle').checked) {
+      sendEQSettings();
     }
   });
 });
