@@ -105,16 +105,26 @@ function removeActivePresets() {
 // INITIALIZE POPUP
 // =====================
 chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
-  if (!tabs[0]?.id) return;
-  currentTabId = tabs[0].id;
+  const tab = tabs[0];
+  if (!tab?.id) return;
+  currentTabId = tab.id;
 
-  await chrome.scripting.executeScript({
-    target: { tabId: currentTabId },
-    files: ['content.js'],
-  });
+  // Only run on http(s) pages
+  if (tab.url && (tab.url.startsWith('http://') || tab.url.startsWith('https://'))) {
+    try {
+      await chrome.scripting.executeScript({
+        target: { tabId: currentTabId },
+        files: ['content.js'],
+      });
+    } catch (err) {
+      console.error('Failed to inject content script:', err);
+    }
 
-  await loadTabSettings(currentTabId);
-  sendEQSettings();
+    await loadTabSettings(currentTabId);
+    sendEQSettings();
+  } else {
+    console.log('EQ cannot be applied on this page:', tab.url);
+  }
 });
 
 // =====================

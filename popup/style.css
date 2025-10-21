@@ -1,10 +1,10 @@
 :root {
   --bg-color: #121212;
   --text-color: #444;
-  --slider-accent: #fdfbd4;
+  --slider-accent: #ffefc7;
   --button-bg: #1f1f1f;
   --button-hover: #2b2b2b;
-  --button-active-bg: #fdfbd4;
+  --button-active-bg: #ffefc7;
   --button-active-color: #000;
   --preamp-color: #ff5c5c;
   --gap: 24px;
@@ -14,16 +14,37 @@ body {
   font-family: "Luckiest Guy", cursive;
   background-color: var(--bg-color);
   color: var(--text-color);
-  padding: 20px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  min-width: 640px;
-
+  padding: 20px;
+  min-width: 641px;
   /* Add border styling */
-  border: 2px solid #2b2b2b;
-  box-shadow: 0 0 20px rgba(255, 255, 255, 0.05);
+  border: 2px solid #ffefc7;
+  box-sizing: border-box;
+}
+
+/* Top 1px line */
+.top-border {
+  position: fixed;   /* stays at top regardless of scrolling */
+  top: 0;            /* align to top */
+  left: 0;           /* start from left */
+  width: 100%;       /* span full width */
+  height: 1px;       /* 1px height */
+  background-color: #414141;  /* color of the line */
+  z-index: 9999;     /* ensure it’s above other content */
+}
+
+/* Top 1px line */
+.left-border {
+  position: fixed;   /* stays at top regardless of scrolling */
+  top: 0;            /* align to top */
+  left: 0;           /* start from left */
+  width: 1px;       /* span full width */
+  height: 100%;       /* 1px height */
+  background-color: #414141;  /* color of the line */
+  z-index: 9999;     /* ensure it’s above other content */
 }
 
 h1 {
@@ -105,15 +126,6 @@ span {
   margin-top: 8px;
   font-size: 13px;
   color: var(--text-color);
-}
-
-input[type="range"] {
-  cursor: pointer;
-  writing-mode: vertical-lr;
-  direction: rtl;
-  width: 100px;
-  height: 100px;
-  accent-color: var(--slider-accent);
 }
 
 .controls {
@@ -217,13 +229,13 @@ input[type="range"]::-moz-range-thumb {
 input[type="range"]:hover::-webkit-slider-thumb,
 input[type="range"]:active::-webkit-slider-thumb {
   box-shadow: 0 0 6px var(--slider-accent);
-  transform: translateX(calc(-50% + 1px)) scale(1.1);
+  transform: translateX(calc(-50% + 1px)) scale(1.2);
 }
 
 input[type="range"]:hover::-moz-range-thumb,
 input[type="range"]:active::-moz-range-thumb {
   box-shadow: 0 0 6px var(--slider-accent);
-  transform: translateX(calc(-50% + 1px)) scale(1.1);
+  transform: translateX(calc(-50% + 1px)) scale(1.2);
 }
 
 /* Focus */
