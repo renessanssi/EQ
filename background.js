@@ -18,7 +18,7 @@ chrome.runtime.onStartup.addListener(initBadge);
 async function injectAndApplyEQ(tabId) {
   try {
     await chrome.scripting.executeScript({
-      target: { tabId },
+      target: { tabId, allFrames: true },
       files: ['content.js'],
     });
 
