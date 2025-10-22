@@ -80,7 +80,7 @@
     filters.bass.gain.value = 0;
     filters.mid.gain.value = 0;
     filters.treble.gain.value = 0;
-    preamp.gain.value = 1;
+    preamp.gain.value = Math.pow(10, ((settings.preamp ?? 100) - 100) / 100);
   });
 
   // Resume AudioContext on user interaction

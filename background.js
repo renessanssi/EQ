@@ -1,4 +1,9 @@
-// Initialize badge globally
+// -------------------------------
+// Global badge state per tab
+// -------------------------------
+const tabBadgeState = {}; // { tabId: true/false }
+
+// Initialize badge for new tabs or on install
 const initBadge = () => {
   chrome.action.setBadgeText({ text: 'off' });
   chrome.action.setBadgeBackgroundColor({ color: '#646464' });
@@ -56,9 +61,15 @@ chrome.runtime.onMessage.addListener(async (message, sender) => {
     const tabId = message.tabId;
     const enabled = message.enabled;
 
-    // Update badge
+    // Save in memory map immediately
+    tabBadgeState[tabId] = enabled;
+
+    // Update badge immediately
     chrome.action.setBadgeText({ tabId, text: enabled ? 'on' : 'off' });
     chrome.action.setBadgeBackgroundColor({ tabId, color: '#646464' });
+
+    // Save to session storage for persistence across reloads
+    await chrome.storage.session.set({ [`eqEnabled_${tabId}`]: enabled });
 
     if (enabled) {
       await injectAndApplyEQ(tabId);
@@ -72,17 +83,24 @@ chrome.runtime.onMessage.addListener(async (message, sender) => {
 // Apply EQ automatically on page load if toggle is ON
 // -------------------------------
 chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
-  if (changeInfo.status !== 'complete') return;
   if (!tab.url || !tab.url.startsWith('http')) return;
 
-  const data = await chrome.storage.session.get(`eqEnabled_${tabId}`);
-  const enabled = data[`eqEnabled_${tabId}`];
+  // 1️⃣ Get toggle state from memory map first
+  let enabled = tabBadgeState[tabId];
 
-  // Update badge
+  // 2️⃣ If not in memory, fallback to session storage
+  if (enabled === undefined) {
+    const data = await chrome.storage.session.get(`eqEnabled_${tabId}`);
+    enabled = data[`eqEnabled_${tabId}`] || false;
+    tabBadgeState[tabId] = enabled; // cache it for future
+  }
+
+  // 3️⃣ Immediately set badge based on toggle state
   chrome.action.setBadgeText({ tabId, text: enabled ? 'on' : 'off' });
   chrome.action.setBadgeBackgroundColor({ tabId, color: '#646464' });
 
-  if (enabled) {
+  // 4️⃣ Inject/apply EQ only after page fully loads
+  if (enabled && changeInfo.status === 'complete') {
     await injectAndApplyEQ(tabId);
   }
 });

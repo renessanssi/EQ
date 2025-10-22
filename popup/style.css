@@ -8,7 +8,7 @@
   --button-active-color: #000;
   --preamp-color: #ff5c5c;
   --gap: 24px;
-  --toggle-color: #d6c372;
+  --toggle-color: #ffefc7;
 }
 
 body {
@@ -247,9 +247,9 @@ input[type="range"]:focus {
 /* Wrapper styling (optional) */
 .toggle-wrapper {
   position: fixed;
-  top: 20px;      /* distance from top */
-  right: 20px;    /* distance from right */
-  z-index: 9999;  /* stay on top of other elements */
+  top: 20px;
+  right: 20px;
+  z-index: 9999;
 }
 
 /* Hide the checkbox itself */
@@ -257,21 +257,39 @@ input[type="range"]:focus {
   display: none;
 }
 
-/* The circular toggle */
+/* Pill toggle background */
 .toggle-wrapper label {
   position: relative;
   display: block;
-  width: 50px;
-  height: 50px;
-  border-radius: 50%;
-  border: 2px solid #333;
-  background-color: transparent;
+  width: 30px;       /* wider than tall */
+  height: 15px;      /* shorter height */
+  border-radius: 999px; /* makes it pill-shaped */
+  border: 2px solid #ffffff;
+  background-color: #ccc;
   cursor: pointer;
   transition: background-color 0.3s, border-color 0.3s;
 }
 
-/* Fill circle when checked */
+/* Inner circle (the switch knob) */
+.toggle-wrapper label::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 4px;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background-color: white;
+  transition: transform 0.3s;
+}
+
+/* Active/checked state */
 .circle-toggle:checked + label {
-  background-color: var(--toggle-color);
-  border-color: #000;
+  background-color: var(--toggle-color, #4a90e2);
+  border-color: #ffffff;
+}
+
+/* Move the knob to the right when active */
+.circle-toggle:checked + label::after {
+  transform: translateX(11px);
 }
