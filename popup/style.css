@@ -9,6 +9,7 @@
   --preamp-color: #ff5c5c;
   --gap: 24px;
   --toggle-color: #ffefc7;
+  --border-color: #414141;
 }
 
 body {
@@ -21,40 +22,36 @@ body {
   justify-content: center;
   padding: 20px;
   min-width: 641px;
-  /* Add border styling */
+  
   border: 2px solid #ffefc7;
   box-sizing: border-box;
 }
 
-/* Top 1px line */
 .top-border {
-  position: fixed;   /* stays at top regardless of scrolling */
-  top: 0;            /* align to top */
-  left: 0;           /* start from left */
-  width: 100%;       /* span full width */
-  height: 1px;       /* 1px height */
-  background-color: #414141;  /* color of the line */
-  z-index: 9999;     /* ensure it’s above other content */
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 1px; 
+  background-color: var(--border-color);
+  z-index: 9999;
 }
 
-/* Top 1px line */
 .left-border {
-  position: fixed;   /* stays at top regardless of scrolling */
-  top: 0;            /* align to top */
-  left: 0;           /* start from left */
-  width: 1px;       /* span full width */
-  height: 100%;       /* 1px height */
-  background-color: #414141;  /* color of the line */
-  z-index: 9999;     /* ensure it’s above other content */
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 1px;
+  height: 100%;
+  background-color: var(--border-color);
+  z-index: 9999;
 }
 
 h1 {
   font-family: "New Rocker", system-ui;
   margin-bottom: 30px;
   cursor: default;
-  color: #fff;
-  
-  text-shadow: 0 0 4px #fdfbd4, 0 0 6px #fdfbd4;
+  color: #ffffff;
 }
 
 .equalizer-wrapper {
@@ -81,7 +78,7 @@ h1 {
   flex-direction: column;
   align-items: center;
   text-align: center;
-  transform: translateX(-400%) translateY(20px); /* shift it left visually */
+  transform: translateX(-390%) translateY(42px); /* shift it left visually */
 }
 
 
@@ -93,14 +90,14 @@ h1 {
 }
 
 #preamp {
-  height: 200px;
+  height: 204px;
   accent-color: var(--preamp-color);
 }
 
 #preampVal {
   margin-top: 8px;
   font-size: 13px;
-  color: var(--text-color);
+  color: #ccc;
 }
 
 .equalizer {

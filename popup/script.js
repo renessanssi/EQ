@@ -18,7 +18,6 @@ function updateValueLabels(values) {
   dom.bassValLabel.style.color = colorValue(values.bass);
   dom.midValLabel.style.color = colorValue(values.mid);
   dom.trebleValLabel.style.color = colorValue(values.treble);
-  dom.preampValLabel.style.color = '#9e9e9e';
 }
 
 // -------------------------------
