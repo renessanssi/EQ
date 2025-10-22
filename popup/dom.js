@@ -1,5 +1,4 @@
 // js/dom.js
-
 export const dom = {
   bassControl: document.getElementById('bass'),
   midControl: document.getElementById('mid'),
@@ -11,7 +10,11 @@ export const dom = {
   trebleValLabel: document.getElementById('trebleVal'),
   preampValLabel: document.getElementById('preampVal'),
 
-  customBtn: document.getElementById('customBtn'),
   resetBtn: document.getElementById('resetBtn'),
-  presetButtons: document.querySelectorAll('.preset')
+  customBtn: document.getElementById('customBtn'),
+
+  // Always get the current preset buttons from the DOM
+  get presetButtons() {
+    return Array.from(document.querySelectorAll('.preset'));
+  }
 };

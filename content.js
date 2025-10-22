@@ -2,12 +2,8 @@
   if (window.equalizerInjected) return;
   window.equalizerInjected = true;
 
-  // -------------------------------------
-  // Create AudioContext & Filters
-  // -------------------------------------
   const context = new AudioContext();
   const filters = {};
-
   filters.bass = context.createBiquadFilter();
   filters.bass.type = 'lowshelf';
   filters.bass.frequency.value = 60;
@@ -24,7 +20,6 @@
   const preamp = context.createGain();
   preamp.gain.value = 1;
 
-  // Connect filters in series
   filters.bass.connect(filters.mid);
   filters.mid.connect(filters.treble);
   filters.treble.connect(preamp);
@@ -34,54 +29,40 @@
   filters.mid.gain.value = 0;
   filters.treble.gain.value = 0;
 
-  // -------------------------------------
-  // Attach EQ to all media elements
-  // -------------------------------------
-  const mediaElements = new WeakSet();
+  // -------------------------------
+  // Connect all existing media elements
+  // -------------------------------
+  const mediaElements = new Set();
 
   function setupMediaElement(media) {
-    if (!media || media._equalizerSetup || !(media instanceof HTMLMediaElement)) return;
-    try {
-      const source = context.createMediaElementSource(media);
-      source.connect(filters.bass);
-      media._equalizerSetup = true;
-      mediaElements.add(media);
-    } catch (e) {
-      // Some sites disallow connecting the same media twice — ignore safely
-      console.warn('EQ: Media setup failed', e);
-    }
+    if (media._equalizerSetup) return;
+    media._equalizerSetup = true;
+
+    const source = context.createMediaElementSource(media);
+    source.connect(filters.bass);
+    mediaElements.add(media);
   }
 
-  // -------------------------------------
-  // Recursive scanner for shadow DOMs
-  // -------------------------------------
-  function findMediaDeep(root = document) {
-    if (!root.querySelectorAll) return;
-    root.querySelectorAll('audio, video').forEach(setupMediaElement);
-    root.querySelectorAll('*').forEach((el) => {
-      if (el.shadowRoot) findMediaDeep(el.shadowRoot);
-    });
-  }
+  document.querySelectorAll('audio, video').forEach(setupMediaElement);
 
-  // Initial scan
-  findMediaDeep();
-
-  // -------------------------------------
-  // Watch for dynamically loaded media
-  // -------------------------------------
   const observer = new MutationObserver((mutations) => {
     for (const mutation of mutations) {
       for (const node of mutation.addedNodes) {
-        if (node.nodeType !== 1) continue;
-        findMediaDeep(node);
+        if (node.tagName === 'AUDIO' || node.tagName === 'VIDEO') {
+          setupMediaElement(node);
+        }
+        if (node.querySelectorAll) {
+          node.querySelectorAll('audio, video').forEach(setupMediaElement);
+        }
       }
     }
   });
-  observer.observe(document, { childList: true, subtree: true });
 
-  // -------------------------------------
-  // Listen for EQ updates from background/popup
-  // -------------------------------------
+  observer.observe(document.body, { childList: true, subtree: true });
+
+  // -------------------------------
+  // Listen for EQ updates
+  // -------------------------------
   window.addEventListener('updateEqualizer', (e) => {
     const settings = e.detail;
     if (!settings) return;
@@ -89,32 +70,24 @@
     filters.bass.gain.value = settings.bass ?? 0;
     filters.mid.gain.value = settings.mid ?? 0;
     filters.treble.gain.value = settings.treble ?? 0;
-
-    // Logarithmic preamp adjustment
-    preamp.gain.value = (settings.preamp === 0) ? 0 : Math.pow(10, ((settings.preamp - 1) - 100) / 100);
+    preamp.gain.value = (settings.preamp ?? 100) / 100;
   });
 
-  // -------------------------------------
-  // Disable EQ (reset all gains)
-  // -------------------------------------
+  // -------------------------------
+  // Disable EQ
+  // -------------------------------
   window.addEventListener('disableEqualizer', () => {
     filters.bass.gain.value = 0;
     filters.mid.gain.value = 0;
     filters.treble.gain.value = 0;
-    preamp.gain.value = 1;
+    preamp.gain.value = Math.pow(10, ((settings.preamp ?? 100) - 100) / 100);
   });
 
-  // -------------------------------------
   // Resume AudioContext on user interaction
-  // -------------------------------------
   function resumeContext() {
-    if (context.state === 'suspended') {
-      context.resume();
-    }
+    if (context.state === 'suspended') context.resume();
   }
 
-  window.addEventListener('click', resumeContext, true);
-  window.addEventListener('keydown', resumeContext, true);
-
-  console.log('[EQ] Injected and observing media elements.');
+  window.addEventListener('click', resumeContext);
+  window.addEventListener('keydown', resumeContext);
 })();
