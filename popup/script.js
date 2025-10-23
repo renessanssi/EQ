@@ -107,7 +107,10 @@ function setControlsEnabled(enabled) {
   });
 
   // Optional dim overlay
-  document.querySelector('.equalizer-wrapper').classList.toggle('disabled', !enabled);
+  const eqContainer = document.querySelector('.equalizer-container');
+  if (eqContainer) {
+    eqContainer.classList.toggle('disabled', !enabled);
+  }
 }
 
 // -------------------------------
@@ -167,15 +170,25 @@ chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
 });
 
 // -------------------------------
-// Event listeners for sliders
+// Preamp slider
+// -------------------------------
+dom.preampControl.addEventListener('input', () => {
+  updateValueLabels({
+    preamp: Number(dom.preampControl.value)
+  });
+
+  sendEQSettingsIfEnabled();
+});
+
+// -------------------------------
+// Equalizer sliders
 // -------------------------------
 [dom.bassControl, dom.midControl, dom.trebleControl].forEach((slider) => {
   slider.addEventListener('input', () => {
     updateValueLabels({
       bass: Number(dom.bassControl.value),
       mid: Number(dom.midControl.value),
-      treble: Number(dom.trebleControl.value),
-      preamp: Number(dom.preampControl.value),
+      treble: Number(dom.trebleControl.value)
     });
 
     sendEQSettingsIfEnabled();
@@ -189,8 +202,7 @@ chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
     saveTabSettings(currentTabId, {
       bass: Number(dom.bassControl.value),
       mid: Number(dom.midControl.value),
-      treble: Number(dom.trebleControl.value),
-      preamp: Number(dom.preampControl.value),
+      treble: Number(dom.trebleControl.value)
     }, 'custom');
   });
 });
