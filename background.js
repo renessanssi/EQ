@@ -22,7 +22,7 @@ async function injectAndApplyEQ(tabId) {
       files: ['content.js'],
     });
 
-    const eqData = await chrome.storage.session.get([`eq_${tabId}`, `eq_custom_${tabId}`]);
+    const eqData = await chrome.storage.session.get(`eq_${tabId}`);
     const settings = eqData[`eq_${tabId}`] || { bass: 0, mid: 0, treble: 0, preamp: 100 };
 
     await chrome.scripting.executeScript({

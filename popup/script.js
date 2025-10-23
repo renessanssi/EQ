@@ -2,7 +2,6 @@ import { dom } from './dom.js';
 import { presets } from './presets.js';
 
 let currentTabId = null;
-let lastCustomValues = { bass: 0, mid: 0, treble: 0 };
 
 // -------------------------------
 // Update numeric labels & colors
@@ -91,7 +90,24 @@ function animateToZero(slider) {
 // -------------------------------
 function removeActivePresets() {
   dom.presetButtons.forEach((b) => b.classList.remove('active'));
-  dom.customBtn.classList.remove('active');
+}
+
+// -------------------------------
+// Enable / disable controls based on toggle
+// -------------------------------
+function setControlsEnabled(enabled) {
+  // Sliders
+  [dom.bassControl, dom.midControl, dom.trebleControl, dom.preampControl].forEach(slider => {
+    slider.disabled = !enabled;
+  });
+
+  // Buttons
+  [dom.resetBtn, dom.customBtn, ...dom.presetButtons].forEach(btn => {
+    btn.disabled = !enabled;
+  });
+
+  // Optional dim overlay
+  document.querySelector('.equalizer-wrapper').classList.toggle('disabled', !enabled);
 }
 
 // -------------------------------
@@ -104,13 +120,11 @@ chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
 
   const data = await chrome.storage.session.get([
     `eq_${currentTabId}`,
-    `eq_custom_${currentTabId}`,
     `eqEnabled_${currentTabId}`,
     `activePreset_${currentTabId}`,
   ]);
 
   const settings = data[`eq_${currentTabId}`] || { bass: 0, mid: 0, treble: 0, preamp: 100 };
-  const savedCustom = data[`eq_custom_${currentTabId}`];
   const activePresetName = data[`activePreset_${currentTabId}`];
 
   // Set sliders to saved values
@@ -119,21 +133,16 @@ chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
   dom.trebleControl.value = settings.treble;
   dom.preampControl.value = settings.preamp;
 
-  lastCustomValues = savedCustom || { bass: settings.bass, mid: settings.mid, treble: settings.treble };
   updateValueLabels(settings);
 
   // Restore active preset button
   removeActivePresets();
   if (activePresetName) {
-    const btn = dom.presetButtons.find(b => b.getAttribute('data-preset') === activePresetName);
-    if (btn) btn.classList.add('active');
-  } else if (savedCustom) {
-    if (
-      savedCustom.bass === Number(dom.bassControl.value) &&
-      savedCustom.mid === Number(dom.midControl.value) &&
-      savedCustom.treble === Number(dom.trebleControl.value)
-    ) {
+    if (activePresetName === 'custom') {
       dom.customBtn.classList.add('active');
+    } else {
+      const btn = dom.presetButtons.find(b => b.getAttribute('data-preset') === activePresetName);
+      if (btn) btn.classList.add('active');
     }
   }
 
@@ -141,12 +150,17 @@ chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
   const eqToggle = document.getElementById('eqToggle');
   eqToggle.checked = data[`eqEnabled_${currentTabId}`] || false;
 
+  // Enable / disable controls according to toggle
+  setControlsEnabled(eqToggle.checked);
+
   if (eqToggle.checked) sendEQSettings();
 
   eqToggle.addEventListener('change', () => {
     const enabled = eqToggle.checked;
     chrome.storage.session.set({ [`eqEnabled_${currentTabId}`]: enabled });
     chrome.runtime.sendMessage({ type: 'toggleChanged', enabled, tabId: currentTabId });
+
+    setControlsEnabled(enabled);
 
     if (enabled) sendEQSettings();
   });
@@ -166,23 +180,23 @@ chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
 
     sendEQSettingsIfEnabled();
 
-    // Manual change → activate Custom
+    // Highlight Custom mode
     removeActivePresets();
     dom.customBtn.classList.add('active');
 
-    lastCustomValues = {
+    // Save "custom" preset
+    chrome.storage.session.set({ [`activePreset_${currentTabId}`]: 'custom' });
+    saveTabSettings(currentTabId, {
       bass: Number(dom.bassControl.value),
       mid: Number(dom.midControl.value),
       treble: Number(dom.trebleControl.value),
-    };
-
-    chrome.storage.session.set({ [`eq_custom_${currentTabId}`]: lastCustomValues });
-    chrome.storage.session.set({ [`activePreset_${currentTabId}`]: null });
+      preamp: Number(dom.preampControl.value),
+    }, 'custom');
   });
 });
 
 // -------------------------------
-// Buttons
+// Reset button
 // -------------------------------
 dom.resetBtn.addEventListener('click', () => {
   [dom.bassControl, dom.midControl, dom.trebleControl].forEach(animateToZero);
@@ -195,12 +209,7 @@ dom.resetBtn.addEventListener('click', () => {
   });
 
   chrome.storage.session.set({
-    [`eq_${currentTabId}`]: {
-      bass: 0,
-      mid: 0,
-      treble: 0,
-      preamp: Number(dom.preampControl.value),
-    },
+    [`eq_${currentTabId}`]: { bass: 0, mid: 0, treble: 0, preamp: Number(dom.preampControl.value) },
     [`activePreset_${currentTabId}`]: null,
   });
 
@@ -209,26 +218,9 @@ dom.resetBtn.addEventListener('click', () => {
   if (document.getElementById('eqToggle').checked) sendEQSettings();
 });
 
-// Custom button
-dom.customBtn.addEventListener('click', () => {
-  animateSliderTo(dom.bassControl, lastCustomValues.bass);
-  animateSliderTo(dom.midControl, lastCustomValues.mid);
-  animateSliderTo(dom.trebleControl, lastCustomValues.treble);
-
-  removeActivePresets();
-  dom.customBtn.classList.add('active');
-
-  saveTabSettings(currentTabId, {
-    bass: lastCustomValues.bass,
-    mid: lastCustomValues.mid,
-    treble: lastCustomValues.treble,
-    preamp: Number(dom.preampControl.value),
-  }, null);
-
-  sendEQSettingsIfEnabled();
-});
-
+// -------------------------------
 // Preset buttons
+// -------------------------------
 dom.presetButtons.forEach((button) => {
   button.addEventListener('click', () => {
     const presetName = button.getAttribute('data-preset');
