@@ -10,7 +10,7 @@
   --gap: 24px;
   --slider-accent: #ffefc7;
   --text-color: #444;
-  --toggle-color: #ffefc7;
+  --toggle-color: #000000;
 }
 
 body {
@@ -49,19 +49,11 @@ body {
   height: 100%;
 }
 
-/* LOGO */
-h1 {
-  font-family: "New Rocker", system-ui;
-  margin-bottom: 30px;
-  color: #ffffff;
-  cursor: default;
-}
-
 /* TOGGLE */
 .toggle-wrapper {
   position: fixed;
-  top: 30px;
-  right: 30px;
+  bottom: 23px;
+  left: 49px;
   z-index: 9999;
 }
 
@@ -142,6 +134,14 @@ span {
 .preamp-container {
   position: absolute; /* Take it out of normal flow */
   left: 30px; /* Almost left edge, adjust as needed */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.master-container {
+  position: absolute; /* Take it out of normal flow */
+  right: 30px; /* Almost left edge, adjust as needed */
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -271,7 +271,7 @@ button:active:not(:disabled) {
 }
 
 #eqCanvas {
-  width: 94%;
+  width: 608px;
   height: 131px;
   display: block;
 }

@@ -3,34 +3,46 @@
   window.equalizerInjected = true;
 
   const context = new AudioContext();
-  const filters = {};
-  filters.bass = context.createBiquadFilter();
+
+  // -------------------------------
+  // Create nodes
+  // -------------------------------
+  const preamp = context.createGain();  // Preamp before EQ
+  preamp.gain.value = 1;                // Default 1 = no boost/cut
+
+  const filters = {
+    bass: context.createBiquadFilter(),
+    mid: context.createBiquadFilter(),
+    treble: context.createBiquadFilter()
+  };
+
   filters.bass.type = 'lowshelf';
   filters.bass.frequency.value = 60;
+  filters.bass.gain.value = 0;
 
-  filters.mid = context.createBiquadFilter();
   filters.mid.type = 'peaking';
   filters.mid.frequency.value = 1000;
   filters.mid.Q.value = 1;
+  filters.mid.gain.value = 0;
 
-  filters.treble = context.createBiquadFilter();
   filters.treble.type = 'highshelf';
   filters.treble.frequency.value = 12000;
-
-  const preamp = context.createGain();
-  preamp.gain.value = 1;
-
-  filters.bass.connect(filters.mid);
-  filters.mid.connect(filters.treble);
-  filters.treble.connect(preamp);
-  preamp.connect(context.destination);
-
-  filters.bass.gain.value = 0;
-  filters.mid.gain.value = 0;
   filters.treble.gain.value = 0;
 
+  const master = context.createGain(); // Master after EQ
+  master.gain.value = 1;
+
   // -------------------------------
-  // Connect all existing media elements
+  // Connect nodes: preamp -> EQ -> master -> destination
+  // -------------------------------
+  preamp.connect(filters.bass);
+  filters.bass.connect(filters.mid);
+  filters.mid.connect(filters.treble);
+  filters.treble.connect(master);
+  master.connect(context.destination);
+
+  // -------------------------------
+  // Handle media elements
   // -------------------------------
   const mediaElements = new Set();
 
@@ -38,8 +50,12 @@
     if (media._equalizerSetup) return;
     media._equalizerSetup = true;
 
+    // Mute original audio
+    media.muted = true;
+
+    // Create source for AudioContext
     const source = context.createMediaElementSource(media);
-    source.connect(filters.bass);
+    source.connect(preamp);
     mediaElements.add(media);
   }
 
@@ -70,24 +86,34 @@
     filters.bass.gain.value = settings.bass ?? 0;
     filters.mid.gain.value = settings.mid ?? 0;
     filters.treble.gain.value = settings.treble ?? 0;
-    preamp.gain.value = Math.pow(10, ((settings.preamp ?? 100) - 100) / 100);
+
+    preamp.gain.value = (settings.preamp ?? 100) / 100;   // scale 0–1
+    master.gain.value = (settings.master ?? 100) / 100;   // scale 0–1
   });
 
   // -------------------------------
-  // Disable EQ
+  // Disable EQ (reset)
   // -------------------------------
   window.addEventListener('disableEqualizer', () => {
     filters.bass.gain.value = 0;
     filters.mid.gain.value = 0;
     filters.treble.gain.value = 0;
-    preamp.gain.value = Math.pow(10, ((settings.preamp ?? 100) - 100) / 100);
+    preamp.gain.value = 1;
+    master.gain.value = 1;
   });
 
+  // -------------------------------
   // Resume AudioContext on user interaction
+  // -------------------------------
   function resumeContext() {
     if (context.state === 'suspended') context.resume();
   }
 
   window.addEventListener('click', resumeContext);
   window.addEventListener('keydown', resumeContext);
+
+  // -------------------------------
+  // Expose nodes for debugging / graph
+  // -------------------------------
+  window._eqNodes = { context, preamp, filters, master };
 })();

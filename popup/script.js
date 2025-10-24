@@ -13,6 +13,7 @@ function updateValueLabels(values) {
   dom.midValLabel.textContent = values.mid;
   dom.trebleValLabel.textContent = values.treble;
   dom.preampValLabel.textContent = values.preamp;
+  dom.masterValLabel.textContent = values.master;
 
   dom.bassValLabel.style.color = colorValue(values.bass);
   dom.midValLabel.style.color = colorValue(values.mid);
@@ -39,6 +40,7 @@ function sendEQSettings() {
     mid: Number(dom.midControl.value),
     treble: Number(dom.trebleControl.value),
     preamp: Number(dom.preampControl.value),
+    master: Number(dom.masterControl.value),
   };
 
   updateValueLabels(eqSettings);
@@ -97,7 +99,7 @@ function removeActivePresets() {
 // Enable / disable controls based on toggle
 // -------------------------------
 function setControlsEnabled(enabled) {
-  [dom.bassControl, dom.midControl, dom.trebleControl, dom.preampControl].forEach(slider => {
+  [dom.bassControl, dom.midControl, dom.trebleControl, dom.preampControl, dom.masterControl].forEach(slider => {
     slider.disabled = !enabled;
   });
 
@@ -109,6 +111,20 @@ function setControlsEnabled(enabled) {
   if (eqContainer) {
     eqContainer.classList.toggle('disabled', !enabled);
   }
+
+  const canvas = document.getElementById('eqCanvas');
+  if (canvas) {
+    canvas.style.opacity = enabled ? '1' : '0.4';
+    canvas.style.pointerEvents = enabled ? 'auto' : 'none';
+    canvas.style.filter = enabled ? 'none' : 'grayscale(20%)';
+  }
+
+  // Fade value labels
+  [dom.bassValLabel, dom.midValLabel, dom.trebleValLabel, dom.preampValLabel, dom.masterControl].forEach(label => {
+    label.style.opacity = enabled ? '1' : '0.4';
+    label.style.filter = enabled ? 'none' : 'grayscale(20%)';
+    label.style.pointerEvents = enabled ? 'auto' : 'none'; // optional if you don't want them clickable
+  });
 }
 
 // -------------------------------
@@ -125,7 +141,7 @@ chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
     `activePreset_${currentTabId}`,
   ]);
 
-  const settings = data[`eq_${currentTabId}`] || { bass: 0, mid: 0, treble: 0, preamp: 100 };
+  const settings = data[`eq_${currentTabId}`] || { bass: 0, mid: 0, treble: 0, preamp: 100, master: 100 };
   const activePresetName = data[`activePreset_${currentTabId}`];
 
   // Set sliders to saved values
@@ -133,6 +149,7 @@ chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
   dom.midControl.value = settings.mid;
   dom.trebleControl.value = settings.treble;
   dom.preampControl.value = settings.preamp;
+  dom.masterControl.value = settings.master;
 
   updateValueLabels(settings);
 
@@ -183,6 +200,17 @@ dom.preampControl.addEventListener('input', () => {
 });
 
 // -------------------------------
+// Master slider
+// -------------------------------
+dom.masterControl.addEventListener('input', () => {
+  updateValueLabels({
+    master: Number(dom.masterControl.value)
+  });
+
+  sendEQSettingsIfEnabled();
+});
+
+// -------------------------------
 // Equalizer sliders
 // -------------------------------
 [dom.bassControl, dom.midControl, dom.trebleControl].forEach((slider) => {
@@ -217,12 +245,11 @@ dom.resetBtn.addEventListener('click', () => {
   updateValueLabels({
     bass: 0,
     mid: 0,
-    treble: 0,
-    preamp: Number(dom.preampControl.value),
+    treble: 0
   });
 
   chrome.storage.session.set({
-    [`eq_${currentTabId}`]: { bass: 0, mid: 0, treble: 0, preamp: Number(dom.preampControl.value) },
+    [`eq_${currentTabId}`]: { bass: 0, mid: 0, treble: 0 },
     [`activePreset_${currentTabId}`]: null,
   });
 
@@ -247,15 +274,13 @@ dom.presetButtons.forEach((button) => {
     updateValueLabels({
       bass: settings.bass,
       mid: settings.mid,
-      treble: settings.treble,
-      preamp: Number(dom.preampControl.value),
+      treble: settings.treble
     });
 
     saveTabSettings(currentTabId, {
       bass: settings.bass,
       mid: settings.mid,
-      treble: settings.treble,
-      preamp: Number(dom.preampControl.value),
+      treble: settings.treble
     }, presetName);
 
     removeActivePresets();
@@ -322,7 +347,6 @@ if (!window.eqGraphInjected) {
     });
   }
 
-  wireSlider(dom.preampControl, dom.preampValLabel, v => preamp.gain.value = dBtoLinear((v - 100) / 10));
   wireSlider(dom.bassControl, dom.bassValLabel, v => filters.bass.gain.value = v);
   wireSlider(dom.midControl, dom.midValLabel, v => filters.mid.gain.value = v);
   wireSlider(dom.trebleControl, dom.trebleValLabel, v => filters.treble.gain.value = v);
@@ -342,7 +366,7 @@ if (!window.eqGraphInjected) {
     ctx.scale(devicePixelRatio, devicePixelRatio);
     ctx.clearRect(0, 0, canvas.clientWidth, canvas.clientHeight);
 
-    const margin = { left: 0, right: 0, top: 20, bottom: 20 };
+    const margin = { left: 0, right: 0, top: 16, bottom: 16 };
     const plotW = canvas.clientWidth - margin.left - margin.right;
     const plotH = canvas.clientHeight - margin.top - margin.bottom;
 
