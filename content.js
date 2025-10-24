@@ -70,7 +70,7 @@
     filters.bass.gain.value = settings.bass ?? 0;
     filters.mid.gain.value = settings.mid ?? 0;
     filters.treble.gain.value = settings.treble ?? 0;
-    preamp.gain.value = (settings.preamp ?? 100) / 100;
+    preamp.gain.value = Math.pow(10, ((settings.preamp ?? 100) - 100) / 100);
   });
 
   // -------------------------------

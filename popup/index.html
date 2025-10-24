@@ -14,8 +14,8 @@
   <div class="top-border"></div>
   <div class="left-border"></div>
 
-  <!-- Logo -->
-  <h1>EQ</h1>
+  <!-- Visualizer -->
+  <canvas id="eqCanvas"></canvas>
 
   <!-- Toggle Button -->
   <div class="toggle-wrapper">
@@ -23,36 +23,38 @@
     <label for="eqToggle"></label>
   </div>
 
-  <!-- Preamp -->
-  <div class="preamp-container">
-    <div class="slider-container">
-      <label>PREAMP</label>
-      <input type="range" id="preamp" min="0" max="100" value="100" step="1" />
-      <span id="preampVal">100</span>
+  <div class="eq-wrapper">
+    <!-- Preamp -->
+    <div class="preamp-container">
+      <div class="slider-container">
+        <label for="preamp">PREAMP</label>
+        <input type="range" id="preamp" min="0" max="100" value="100" step="1" />
+        <span id="preampVal">100</span>
+      </div>
     </div>
-  </div>
 
-  <!-- Equalizer -->
-  <div class="equalizer-container">
-    <div class="slider-container">
-      <label for="bass">60 Hz</label>
-      <input type="range" id="bass" min="-30" max="30" value="0" step="1" />
-      <span id="bassVal">0</span>
-    </div>
-    <div class="slider-container">
-      <label for="mid">1 kHz</label>
-      <input type="range" id="mid" min="-30" max="30" value="0" step="1" />
-      <span id="midVal">0</span>
-    </div>
-    <div class="slider-container">
-      <label for="treble">12 kHz</label>
-      <input type="range" id="treble" min="-30" max="30" value="0" step="1" />
-      <span id="trebleVal">0</span>
+    <!-- Equalizer -->
+    <div class="equalizer-container">
+      <div class="slider-container">
+        <label for="bass">60 Hz</label>
+        <input type="range" id="bass" min="-30" max="30" value="0" step="1" />
+        <span id="bassVal">0</span>
+      </div>
+      <div class="slider-container">
+        <label for="mid">1 kHz</label>
+        <input type="range" id="mid" min="-30" max="30" value="0" step="1" />
+        <span id="midVal">0</span>
+      </div>
+      <div class="slider-container">
+        <label for="treble">12 kHz</label>
+        <input type="range" id="treble" min="-30" max="30" value="0" step="1" />
+        <span id="trebleVal">0</span>
+      </div>
     </div>
   </div>
 
   <!-- Presets -->
-  <div class="presets">
+  <div class="preset-container">
     <button id="resetBtn">Reset</button>
 
     <button class="preset" data-preset="boostBass">Bass</button>
@@ -63,7 +65,7 @@
     <button class="preset" id="customBtn" data-preset="boostCustom">Custom</button>
   </div>
 
-  <!-- Script -->
+  <!-- Scripts -->
   <script type="module" src="script.js"></script>
 </body>
 </html>

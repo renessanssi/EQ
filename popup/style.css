@@ -19,7 +19,6 @@ body {
   align-items: center;
   justify-content: center;
   min-width: calc(640px + 1px);
-  padding: 20px;
   border: 2px solid #ffefc7;
   box-sizing: border-box;
 
@@ -61,8 +60,8 @@ h1 {
 /* TOGGLE */
 .toggle-wrapper {
   position: fixed;
-  top: 20px;
-  right: 20px;
+  top: 30px;
+  right: 30px;
   z-index: 9999;
 }
 
@@ -128,21 +127,35 @@ span {
   margin-top: 8px;
   font-size: 13px;
   color: var(--text-color);
+  cursor: default;
 }
 
-/* PREAMP */
+.eq-wrapper {
+  display: flex;
+  align-items: flex-end; /* Align sliders at bottom */
+  justify-content: center; /* Centers EQ sliders as a group */
+  gap: 40px; /* Space between preamp and EQ */
+  position: relative; /* Needed for absolute positioning of preamp */
+  width: 100%;
+}
+
 .preamp-container {
-  position: fixed;
-  top: 105px;
-  left: 35px;
+  position: absolute; /* Take it out of normal flow */
+  left: 30px; /* Almost left edge, adjust as needed */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
-/* EQUALIZER */
 .equalizer-container {
   display: flex;
-  justify-content: center;
-  align-items: flex-end;
-  gap: 60px;
+  gap: 20px; /* Space between EQ sliders */
+}
+
+.slider-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 /* SLIDERS */
@@ -236,11 +249,12 @@ button:active:not(:disabled) {
 }
 
 /* PRESETS */
-.presets {
+.preset-container {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
   margin-top: 20px;
+  margin-bottom: 20px;
   gap: 8px;
 }
 
@@ -250,3 +264,14 @@ button:active:not(:disabled) {
 }
 
 /* */
+
+#customBtn {
+  pointer-events: none;
+  cursor: default;
+}
+
+#eqCanvas {
+  width: 94%;
+  height: 131px;
+  display: block;
+}

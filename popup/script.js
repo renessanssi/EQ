@@ -72,12 +72,13 @@ function animateSliderTo(slider, target) {
 
   const interval = setInterval(() => {
     slider.value = parseFloat(slider.value) + stepValue;
+    slider.dispatchEvent(new Event('input'));
     count++;
     if (count >= steps) {
       slider.value = target;
+      slider.dispatchEvent(new Event('input'));
       clearInterval(interval);
     }
-    sendEQSettingsIfEnabled();
   }, 10);
 }
 
@@ -96,17 +97,14 @@ function removeActivePresets() {
 // Enable / disable controls based on toggle
 // -------------------------------
 function setControlsEnabled(enabled) {
-  // Sliders
   [dom.bassControl, dom.midControl, dom.trebleControl, dom.preampControl].forEach(slider => {
     slider.disabled = !enabled;
   });
 
-  // Buttons
   [dom.resetBtn, dom.customBtn, ...dom.presetButtons].forEach(btn => {
     btn.disabled = !enabled;
   });
 
-  // Optional dim overlay
   const eqContainer = document.querySelector('.equalizer-container');
   if (eqContainer) {
     eqContainer.classList.toggle('disabled', !enabled);
@@ -138,6 +136,11 @@ chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
 
   updateValueLabels(settings);
 
+  // ✅ Force graph redraw when popup reopens
+  if (window.eqGraphInjected && typeof window.redrawEQGraph === 'function') {
+    window.redrawEQGraph(settings);
+  }
+
   // Restore active preset button
   removeActivePresets();
   if (activePresetName) {
@@ -164,7 +167,6 @@ chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
     chrome.runtime.sendMessage({ type: 'toggleChanged', enabled, tabId: currentTabId });
 
     setControlsEnabled(enabled);
-
     if (enabled) sendEQSettings();
   });
 });
@@ -184,7 +186,7 @@ dom.preampControl.addEventListener('input', () => {
 // Equalizer sliders
 // -------------------------------
 [dom.bassControl, dom.midControl, dom.trebleControl].forEach((slider) => {
-  slider.addEventListener('input', () => {
+  slider.addEventListener('input', (event) => {
     updateValueLabels({
       bass: Number(dom.bassControl.value),
       mid: Number(dom.midControl.value),
@@ -193,17 +195,16 @@ dom.preampControl.addEventListener('input', () => {
 
     sendEQSettingsIfEnabled();
 
-    // Highlight Custom mode
-    removeActivePresets();
-    dom.customBtn.classList.add('active');
-
-    // Save "custom" preset
-    chrome.storage.session.set({ [`activePreset_${currentTabId}`]: 'custom' });
-    saveTabSettings(currentTabId, {
-      bass: Number(dom.bassControl.value),
-      mid: Number(dom.midControl.value),
-      treble: Number(dom.trebleControl.value)
-    }, 'custom');
+    if (event.isTrusted) {
+      removeActivePresets();
+      dom.customBtn.classList.add('active');
+      chrome.storage.session.set({ [`activePreset_${currentTabId}`]: 'custom' });
+      saveTabSettings(currentTabId, {
+        bass: Number(dom.bassControl.value),
+        mid: Number(dom.midControl.value),
+        treble: Number(dom.trebleControl.value)
+      }, 'custom');
+    }
   });
 });
 
@@ -263,3 +264,137 @@ dom.presetButtons.forEach((button) => {
     sendEQSettingsIfEnabled();
   });
 });
+
+// -------------------------------
+// Graph initialization
+// -------------------------------
+if (!window.eqGraphInjected) {
+  window.eqGraphInjected = true;
+
+  const context = new (window.AudioContext || window.webkitAudioContext)();
+  const filters = {
+    bass: context.createBiquadFilter(),
+    mid: context.createBiquadFilter(),
+    treble: context.createBiquadFilter()
+  };
+
+  filters.bass.type = 'lowshelf';
+  filters.bass.frequency.value = 60;
+  filters.bass.gain.value = 0;
+
+  filters.mid.type = 'peaking';
+  filters.mid.frequency.value = 1000;
+  filters.mid.Q.value = 1;
+  filters.mid.gain.value = 0;
+
+  filters.treble.type = 'highshelf';
+  filters.treble.frequency.value = 12000;
+  filters.treble.gain.value = 0;
+
+  const preamp = context.createGain();
+  preamp.gain.value = 1;
+
+  const canvas = document.getElementById('eqCanvas');
+  const ctx = canvas.getContext('2d');
+
+  const POINTS = 512;
+  const freqs = new Float32Array(POINTS);
+  const fmin = 20, fmax = 20000;
+  for (let i = 0; i < POINTS; i++) {
+    const frac = i / (POINTS - 1);
+    freqs[i] = fmin * Math.pow(fmax / fmin, frac);
+  }
+  const mag = {
+    bass: new Float32Array(POINTS),
+    mid: new Float32Array(POINTS),
+    treble: new Float32Array(POINTS)
+  };
+
+  function dBtoLinear(db) { return Math.pow(10, db / 20); }
+  function dbToY(db, top, bottom, plotH) { return ((top - db) / (top - bottom)) * plotH; }
+  function freqToX(freq, plotW) { return (Math.log10(freq / 20) / Math.log10(20000 / 20)) * plotW; }
+
+  function wireSlider(slider, valElem, onChange) {
+    slider.addEventListener('input', e => {
+      valElem.textContent = e.target.value;
+      onChange(Number(e.target.value));
+      draw();
+    });
+  }
+
+  wireSlider(dom.preampControl, dom.preampValLabel, v => preamp.gain.value = dBtoLinear((v - 100) / 10));
+  wireSlider(dom.bassControl, dom.bassValLabel, v => filters.bass.gain.value = v);
+  wireSlider(dom.midControl, dom.midValLabel, v => filters.mid.gain.value = v);
+  wireSlider(dom.trebleControl, dom.trebleValLabel, v => filters.treble.gain.value = v);
+
+  function computeResponses() {
+    filters.bass.getFrequencyResponse(freqs, mag.bass, new Float32Array(POINTS));
+    filters.mid.getFrequencyResponse(freqs, mag.mid, new Float32Array(POINTS));
+    filters.treble.getFrequencyResponse(freqs, mag.treble, new Float32Array(POINTS));
+  }
+
+  function draw() {
+    computeResponses();
+
+    const w = canvas.width = canvas.clientWidth * devicePixelRatio;
+    const h = canvas.height = canvas.clientHeight * devicePixelRatio;
+    ctx.resetTransform();
+    ctx.scale(devicePixelRatio, devicePixelRatio);
+    ctx.clearRect(0, 0, canvas.clientWidth, canvas.clientHeight);
+
+    const margin = { left: 0, right: 0, top: 20, bottom: 20 };
+    const plotW = canvas.clientWidth - margin.left - margin.right;
+    const plotH = canvas.clientHeight - margin.top - margin.bottom;
+
+    ctx.fillStyle = 'rgba(255,255,255,0.02)';
+    ctx.fillRect(margin.left, margin.top, plotW, plotH);
+
+    const freqTicks = [20, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000];
+    ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    for (let f of freqTicks) {
+      const x = margin.left + freqToX(f, plotW);
+      ctx.moveTo(x, margin.top);
+      ctx.lineTo(x, margin.top + plotH);
+    }
+    ctx.stroke();
+
+    const dbTop = 30, dbBottom = -30;
+    ctx.beginPath();
+    for (let db = dbTop; db >= dbBottom; db -= 6) {
+      const y = margin.top + dbToY(db, dbTop, dbBottom, plotH);
+      ctx.moveTo(margin.left, y);
+      ctx.lineTo(margin.left + plotW, y);
+    }
+    ctx.stroke();
+
+    function drawCurve(arr, color, width = 2) {
+      ctx.beginPath();
+      ctx.lineWidth = width;
+      ctx.strokeStyle = color;
+      for (let i = 0; i < POINTS; i++) {
+        const x = margin.left + freqToX(freqs[i], plotW);
+        const y = margin.top + dbToY(20 * Math.log10(arr[i]), dbTop, dbBottom, plotH);
+        i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+    }
+
+    drawCurve(mag.treble, 'rgba(140,255,150,0.95)');
+    drawCurve(mag.mid, 'rgba(90,170,255,0.95)');
+    drawCurve(mag.bass, 'rgba(255,174,0,0.95)');
+  }
+
+  // ✅ Allow popup to trigger redraw later
+  window.redrawEQGraph = (settings) => {
+    filters.bass.gain.value = settings.bass;
+    filters.mid.gain.value = settings.mid;
+    filters.treble.gain.value = settings.treble;
+    preamp.gain.value = (settings.preamp ?? 100) / 100;
+    draw();
+  };
+
+  draw();
+  window.addEventListener('resize', () => { setTimeout(draw, 100); });
+}
