@@ -141,7 +141,7 @@ chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
     `activePreset_${currentTabId}`,
   ]);
 
-  const settings = data[`eq_${currentTabId}`] || { bass: 0, mid: 0, treble: 0, preamp: 100, master: 100 };
+  const settings = data[`eq_${currentTabId}`] || { bass: 0, mid: 0, treble: 0, preamp: 0, master: 100 };
   const activePresetName = data[`activePreset_${currentTabId}`];
 
   // Set sliders to saved values
@@ -316,9 +316,6 @@ if (!window.eqGraphInjected) {
   filters.treble.frequency.value = 12000;
   filters.treble.gain.value = 0;
 
-  const preamp = context.createGain();
-  preamp.gain.value = 1;
-
   const canvas = document.getElementById('eqCanvas');
   const ctx = canvas.getContext('2d');
 
@@ -415,7 +412,6 @@ if (!window.eqGraphInjected) {
     filters.bass.gain.value = settings.bass;
     filters.mid.gain.value = settings.mid;
     filters.treble.gain.value = settings.treble;
-    preamp.gain.value = (settings.preamp ?? 100) / 100;
     draw();
   };
 

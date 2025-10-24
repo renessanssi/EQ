@@ -1,18 +1,20 @@
 // dom.js
 
 export const dom = {
+  preampControl: document.getElementById('preamp'),
+
   bassControl: document.getElementById('bass'),
   midControl: document.getElementById('mid'),
   trebleControl: document.getElementById('treble'),
 
-  preampControl: document.getElementById('preamp'),
   masterControl: document.getElementById('master'),
+
+  preampValLabel: document.getElementById('preampVal'),
 
   bassValLabel: document.getElementById('bassVal'),
   midValLabel: document.getElementById('midVal'),
   trebleValLabel: document.getElementById('trebleVal'),
-
-  preampValLabel: document.getElementById('preampVal'),
+  
   masterValLabel: document.getElementById('masterVal'),
 
   resetBtn: document.getElementById('resetBtn'),

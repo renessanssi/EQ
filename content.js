@@ -8,7 +8,7 @@
   // Create nodes
   // -------------------------------
   const preamp = context.createGain();  // Preamp before EQ
-  preamp.gain.value = 1;                // Default 1 = no boost/cut
+  preamp.gain.value = 1;
 
   const filters = {
     bass: context.createBiquadFilter(),
@@ -50,9 +50,6 @@
     if (media._equalizerSetup) return;
     media._equalizerSetup = true;
 
-    // Mute original audio
-    media.muted = true;
-
     // Create source for AudioContext
     const source = context.createMediaElementSource(media);
     source.connect(preamp);
@@ -83,22 +80,25 @@
     const settings = e.detail;
     if (!settings) return;
 
+    preamp.gain.value = Math.pow(10, settings.preamp / 20);
+
     filters.bass.gain.value = settings.bass ?? 0;
     filters.mid.gain.value = settings.mid ?? 0;
     filters.treble.gain.value = settings.treble ?? 0;
 
-    preamp.gain.value = (settings.preamp ?? 100) / 100;   // scale 0–1
-    master.gain.value = (settings.master ?? 100) / 100;   // scale 0–1
+    master.gain.value = (settings.master ?? 100) / 100;
   });
 
   // -------------------------------
   // Disable EQ (reset)
   // -------------------------------
   window.addEventListener('disableEqualizer', () => {
+    preamp.gain.value = 1;
+
     filters.bass.gain.value = 0;
     filters.mid.gain.value = 0;
     filters.treble.gain.value = 0;
-    preamp.gain.value = 1;
+    
     master.gain.value = 1;
   });
 
