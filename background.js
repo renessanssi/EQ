@@ -66,7 +66,6 @@ chrome.runtime.onMessage.addListener(async (message, sender) => {
 
     // Update badge immediately
     chrome.action.setBadgeText({ tabId, text: enabled ? 'on' : 'off' });
-    chrome.action.setBadgeBackgroundColor({ tabId, color: '#646464' });
 
     // Save to session storage for persistence across reloads
     await chrome.storage.session.set({ [`eqEnabled_${tabId}`]: enabled });
@@ -97,7 +96,6 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
 
   // 3️⃣ Immediately set badge based on toggle state
   chrome.action.setBadgeText({ tabId, text: enabled ? 'on' : 'off' });
-  chrome.action.setBadgeBackgroundColor({ tabId, color: '#646464' });
 
   // 4️⃣ Inject/apply EQ only after page fully loads
   if (enabled && changeInfo.status === 'complete') {

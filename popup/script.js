@@ -7,6 +7,22 @@ import { removeActivePresets, initPresetButtons } from './presets-handler.js';
 import { initEQGraph } from './graph.js';
 
 // -------------------------------
+// Inject content.js
+// -------------------------------
+document.addEventListener("DOMContentLoaded", async () => {
+  // Get current active tab
+  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+
+  if (!tab || !tab.id) return;
+
+  // Inject content.js dynamically
+  await chrome.scripting.executeScript({
+    target: { tabId: tab.id },
+    files: ['content.js']
+  });
+});
+
+// -------------------------------
 // Initialize popup
 // -------------------------------
 chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
