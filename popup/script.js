@@ -186,6 +186,8 @@ chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
     setControlsEnabled(enabled);
     if (enabled) sendEQSettings();
   });
+
+  window.redrawEQGraph(settings);
 });
 
 // -------------------------------
@@ -289,12 +291,8 @@ dom.presetButtons.forEach((button) => {
     sendEQSettingsIfEnabled();
   });
 });
-
-// -------------------------------
-// Graph initialization
-// -------------------------------
-if (!window.eqGraphInjected) {
-  window.eqGraphInjected = true;
+if (!window.eqCanvasInjected) {
+  window.eqCanvasInjected = true;
 
   const context = new (window.AudioContext || window.webkitAudioContext)();
   const filters = {
@@ -332,6 +330,8 @@ if (!window.eqGraphInjected) {
     treble: new Float32Array(POINTS)
   };
 
+  let frequencyData = [];
+
   function dBtoLinear(db) { return Math.pow(10, db / 20); }
   function dbToY(db, top, bottom, plotH) { return ((top - db) / (top - bottom)) * plotH; }
   function freqToX(freq, plotW) { return (Math.log10(freq / 20) / Math.log10(20000 / 20)) * plotW; }
@@ -340,7 +340,6 @@ if (!window.eqGraphInjected) {
     slider.addEventListener('input', e => {
       valElem.textContent = e.target.value;
       onChange(Number(e.target.value));
-      draw();
     });
   }
 
@@ -355,8 +354,6 @@ if (!window.eqGraphInjected) {
   }
 
   function draw() {
-    computeResponses();
-
     const w = canvas.width = canvas.clientWidth * devicePixelRatio;
     const h = canvas.height = canvas.clientHeight * devicePixelRatio;
     ctx.resetTransform();
@@ -367,8 +364,26 @@ if (!window.eqGraphInjected) {
     const plotW = canvas.clientWidth;
     const plotH = canvas.clientHeight;
 
-    ctx.fillStyle = 'rgba(255,255,255,0.02)';
-    ctx.fillRect(margin.left, margin.top, plotW, plotH);
+    // -------------------------------
+    // Draw Bar Visualizer
+    // -------------------------------
+    if (frequencyData.length) {
+      const bufferLength = frequencyData.length;
+      const barWidth = (plotW / bufferLength) * 1.5;
+      let x = 0;
+      for (let i = 0; i < bufferLength; i++) {
+        const barHeight = (frequencyData[i] / 255) * plotH;
+        const hue = (i / bufferLength) * 360;
+        ctx.fillStyle = `hsl(${hue}, 100%, 50%)`;
+        ctx.fillRect(x, plotH - barHeight, barWidth, barHeight);
+        x += barWidth;
+      }
+    }
+
+    // -------------------------------
+    // Draw EQ Curves
+    // -------------------------------
+    computeResponses();
 
     const freqTicks = [20, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000];
     ctx.strokeStyle = 'rgba(255,255,255,0.04)';
@@ -405,16 +420,32 @@ if (!window.eqGraphInjected) {
     drawCurve(mag.treble, 'rgba(140,255,150,0.95)');
     drawCurve(mag.mid, 'rgba(90,170,255,0.95)');
     drawCurve(mag.bass, 'rgba(255,174,0,0.95)');
+
+    requestAnimationFrame(draw);
   }
 
-  // ✅ Allow popup to trigger redraw later
+  // -------------------------------
+  // Frequency Data Update
+  // -------------------------------
+  function updateVisualizer() {
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      chrome.tabs.sendMessage(tabs[0].id, { action: "getFrequencyData" }, (response) => {
+        if (response && response.data) {
+          frequencyData = response.data;
+        }
+      });
+    });
+  }
+
+  // Start loop
+  setInterval(updateVisualizer, 50); // Update frequency data every 50ms
+  draw();
+
   window.redrawEQGraph = (settings) => {
     filters.bass.gain.value = settings.bass;
     filters.mid.gain.value = settings.mid;
     filters.treble.gain.value = settings.treble;
-    draw();
   };
 
-  draw();
   window.addEventListener('resize', () => { setTimeout(draw, 100); });
 }
