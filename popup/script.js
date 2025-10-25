@@ -1,131 +1,10 @@
 import { dom } from './dom.js';
-import { presets } from './presets.js';
-
-let currentTabId = null;
-
-// -------------------------------
-// Update numeric labels & colors
-// -------------------------------
-function updateValueLabels(values) {
-  const colorValue = (val) => (val > 0 ? '#d6c372' : val < 0 ? '#bec7c7' : '#2f2f2fff');
-
-  dom.bassValLabel.textContent = values.bass;
-  dom.midValLabel.textContent = values.mid;
-  dom.trebleValLabel.textContent = values.treble;
-  dom.preampValLabel.textContent = values.preamp;
-  dom.masterValLabel.textContent = values.master;
-
-  dom.bassValLabel.style.color = colorValue(values.bass);
-  dom.midValLabel.style.color = colorValue(values.mid);
-  dom.trebleValLabel.style.color = colorValue(values.treble);
-}
-
-// -------------------------------
-// Save EQ settings per tab
-// -------------------------------
-async function saveTabSettings(tabId, settings, presetName = null) {
-  const data = { [`eq_${tabId}`]: settings };
-  if (presetName !== null) data[`activePreset_${tabId}`] = presetName;
-  await chrome.storage.session.set(data);
-}
-
-// -------------------------------
-// Send EQ to content.js
-// -------------------------------
-function sendEQSettings() {
-  if (!currentTabId) return;
-
-  const eqSettings = {
-    bass: Number(dom.bassControl.value),
-    mid: Number(dom.midControl.value),
-    treble: Number(dom.trebleControl.value),
-    preamp: Number(dom.preampControl.value),
-    master: Number(dom.masterControl.value),
-  };
-
-  updateValueLabels(eqSettings);
-  saveTabSettings(currentTabId, eqSettings);
-
-  chrome.scripting.executeScript({
-    target: { tabId: currentTabId },
-    func: (settings) => {
-      window.dispatchEvent(new CustomEvent('updateEqualizer', { detail: settings }));
-    },
-    args: [eqSettings],
-  });
-}
-
-// -------------------------------
-// Only send if EQ toggle is ON
-// -------------------------------
-function sendEQSettingsIfEnabled() {
-  if (document.getElementById('eqToggle').checked) {
-    sendEQSettings();
-  }
-}
-
-// -------------------------------
-// Slider animation helpers
-// -------------------------------
-function animateSliderTo(slider, target) {
-  const steps = 15;
-  const stepValue = (target - slider.value) / steps;
-  let count = 0;
-
-  const interval = setInterval(() => {
-    slider.value = parseFloat(slider.value) + stepValue;
-    slider.dispatchEvent(new Event('input'));
-    count++;
-    if (count >= steps) {
-      slider.value = target;
-      slider.dispatchEvent(new Event('input'));
-      clearInterval(interval);
-    }
-  }, 10);
-}
-
-function animateToZero(slider) {
-  animateSliderTo(slider, 0);
-}
-
-// -------------------------------
-// Preset helpers
-// -------------------------------
-function removeActivePresets() {
-  dom.presetButtons.forEach((b) => b.classList.remove('active'));
-}
-
-// -------------------------------
-// Enable / disable controls based on toggle
-// -------------------------------
-function setControlsEnabled(enabled) {
-  [dom.bassControl, dom.midControl, dom.trebleControl, dom.preampControl, dom.masterControl].forEach(slider => {
-    slider.disabled = !enabled;
-  });
-
-  [dom.resetBtn, dom.customBtn, ...dom.presetButtons].forEach(btn => {
-    btn.disabled = !enabled;
-  });
-
-  const eqContainer = document.querySelector('.equalizer-container');
-  if (eqContainer) {
-    eqContainer.classList.toggle('disabled', !enabled);
-  }
-
-  const canvas = document.getElementById('eqCanvas');
-  if (canvas) {
-    canvas.style.opacity = enabled ? '1' : '0.4';
-    canvas.style.pointerEvents = enabled ? 'auto' : 'none';
-    canvas.style.filter = enabled ? 'none' : 'grayscale(20%)';
-  }
-
-  // Fade value labels
-  [dom.bassValLabel, dom.midValLabel, dom.trebleValLabel, dom.preampValLabel, dom.masterControl].forEach(label => {
-    label.style.opacity = enabled ? '1' : '0.4';
-    label.style.filter = enabled ? 'none' : 'grayscale(20%)';
-    label.style.pointerEvents = enabled ? 'auto' : 'none'; // optional if you don't want them clickable
-  });
-}
+import { loadTabSettings } from './state.js';
+import { setCurrentTab, sendEQSettings } from './messaging.js';
+import { updateValueLabels, setControlsEnabled } from './ui.js';
+import { animateToZero } from './animation.js';
+import { removeActivePresets, initPresetButtons } from './presets-handler.js';
+import { initEQGraph } from './graph.js';
 
 // -------------------------------
 // Initialize popup
@@ -133,319 +12,100 @@ function setControlsEnabled(enabled) {
 chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
   const tab = tabs[0];
   if (!tab?.id) return;
-  currentTabId = tab.id;
+  const tabId = tab.id;
+  setCurrentTab(tabId);
 
-  const data = await chrome.storage.session.get([
-    `eq_${currentTabId}`,
-    `eqEnabled_${currentTabId}`,
-    `activePreset_${currentTabId}`,
-  ]);
+  // Load previously saved settings
+  const { eq, enabled, activePreset } = await loadTabSettings(tabId);
 
-  const settings = data[`eq_${currentTabId}`] || { bass: 0, mid: 0, treble: 0, preamp: 0, master: 100 };
-  const activePresetName = data[`activePreset_${currentTabId}`];
+  // Set initial slider positions
+  dom.bassControl.value = eq.bass;
+  dom.midControl.value = eq.mid;
+  dom.trebleControl.value = eq.treble;
+  dom.preampControl.value = eq.preamp;
+  dom.masterControl.value = eq.master;
 
-  // Set sliders to saved values
-  dom.bassControl.value = settings.bass;
-  dom.midControl.value = settings.mid;
-  dom.trebleControl.value = settings.treble;
-  dom.preampControl.value = settings.preamp;
-  dom.masterControl.value = settings.master;
-
-  updateValueLabels(settings);
-
-  // ✅ Force graph redraw when popup reopens
-  if (window.eqGraphInjected && typeof window.redrawEQGraph === 'function') {
-    window.redrawEQGraph(settings);
-  }
+  updateValueLabels(eq);
+  setControlsEnabled(enabled);
+  initPresetButtons(tabId);
+  initEQGraph(dom);
 
   // Restore active preset button
   removeActivePresets();
-  if (activePresetName) {
-    if (activePresetName === 'custom') {
+  if (activePreset) {
+    if (activePreset === 'custom') {
       dom.customBtn.classList.add('active');
     } else {
-      const btn = dom.presetButtons.find(b => b.getAttribute('data-preset') === activePresetName);
+      const btn = dom.presetButtons.find(b => b.getAttribute('data-preset') === activePreset);
       if (btn) btn.classList.add('active');
     }
   }
 
-  // Initialize toggle
+  // Initialize toggle state
   const eqToggle = document.getElementById('eqToggle');
-  eqToggle.checked = data[`eqEnabled_${currentTabId}`] || false;
+  eqToggle.checked = enabled;
+  if (enabled) sendEQSettings();
 
-  // Enable / disable controls according to toggle
-  setControlsEnabled(eqToggle.checked);
-
-  if (eqToggle.checked) sendEQSettings();
-
+  // -------------------------------
+  // Toggle ON/OFF handler
+  // -------------------------------
   eqToggle.addEventListener('change', () => {
-    const enabled = eqToggle.checked;
-    chrome.storage.session.set({ [`eqEnabled_${currentTabId}`]: enabled });
-    chrome.runtime.sendMessage({ type: 'toggleChanged', enabled, tabId: currentTabId });
-
-    setControlsEnabled(enabled);
-    if (enabled) sendEQSettings();
+    const isEnabled = eqToggle.checked;
+    chrome.storage.session.set({ [`eqEnabled_${tabId}`]: isEnabled });
+    chrome.runtime.sendMessage({ type: 'toggleChanged', enabled: isEnabled, tabId });
+    setControlsEnabled(isEnabled);
+    if (isEnabled) sendEQSettings();
   });
 
-  window.redrawEQGraph(settings);
-});
-
-// -------------------------------
-// Preamp slider
-// -------------------------------
-dom.preampControl.addEventListener('input', () => {
-  updateValueLabels({
-    preamp: Number(dom.preampControl.value)
+  // -------------------------------
+  // Slider handlers
+  // -------------------------------
+  dom.preampControl.addEventListener('input', () => {
+    updateValueLabels({ preamp: Number(dom.preampControl.value) });
+    if (eqToggle.checked) sendEQSettings();
   });
 
-  sendEQSettingsIfEnabled();
-});
-
-// -------------------------------
-// Master slider
-// -------------------------------
-dom.masterControl.addEventListener('input', () => {
-  updateValueLabels({
-    master: Number(dom.masterControl.value)
+  dom.masterControl.addEventListener('input', () => {
+    updateValueLabels({ master: Number(dom.masterControl.value) });
+    if (eqToggle.checked) sendEQSettings();
   });
 
-  sendEQSettingsIfEnabled();
-});
-
-// -------------------------------
-// Equalizer sliders
-// -------------------------------
-[dom.bassControl, dom.midControl, dom.trebleControl].forEach((slider) => {
-  slider.addEventListener('input', (event) => {
-    updateValueLabels({
-      bass: Number(dom.bassControl.value),
-      mid: Number(dom.midControl.value),
-      treble: Number(dom.trebleControl.value)
-    });
-
-    sendEQSettingsIfEnabled();
-
-    if (event.isTrusted) {
-      removeActivePresets();
-      dom.customBtn.classList.add('active');
-      chrome.storage.session.set({ [`activePreset_${currentTabId}`]: 'custom' });
-      saveTabSettings(currentTabId, {
+  [dom.bassControl, dom.midControl, dom.trebleControl].forEach((slider) => {
+    slider.addEventListener('input', (event) => {
+      updateValueLabels({
         bass: Number(dom.bassControl.value),
         mid: Number(dom.midControl.value),
         treble: Number(dom.trebleControl.value)
-      }, 'custom');
-    }
-  });
-});
+      });
 
-// -------------------------------
-// Reset button
-// -------------------------------
-dom.resetBtn.addEventListener('click', () => {
-  [dom.bassControl, dom.midControl, dom.trebleControl].forEach(animateToZero);
+      if (eqToggle.checked) sendEQSettings();
 
-  updateValueLabels({
-    bass: 0,
-    mid: 0,
-    treble: 0
-  });
-
-  chrome.storage.session.set({
-    [`eq_${currentTabId}`]: { bass: 0, mid: 0, treble: 0 },
-    [`activePreset_${currentTabId}`]: null,
-  });
-
-  removeActivePresets();
-
-  if (document.getElementById('eqToggle').checked) sendEQSettings();
-});
-
-// -------------------------------
-// Preset buttons
-// -------------------------------
-dom.presetButtons.forEach((button) => {
-  button.addEventListener('click', () => {
-    const presetName = button.getAttribute('data-preset');
-    const settings = presets[presetName];
-    if (!settings) return;
-
-    animateSliderTo(dom.bassControl, settings.bass);
-    animateSliderTo(dom.midControl, settings.mid);
-    animateSliderTo(dom.trebleControl, settings.treble);
-
-    updateValueLabels({
-      bass: settings.bass,
-      mid: settings.mid,
-      treble: settings.treble
+      if (event.isTrusted) {
+        removeActivePresets();
+        dom.customBtn.classList.add('active');
+        chrome.storage.session.set({ [`activePreset_${tabId}`]: 'custom' });
+      }
     });
+  });
 
-    saveTabSettings(currentTabId, {
-      bass: settings.bass,
-      mid: settings.mid,
-      treble: settings.treble
-    }, presetName);
+  // -------------------------------
+  // Reset button
+  // -------------------------------
+  dom.resetBtn.addEventListener('click', () => {
+    [dom.bassControl, dom.midControl, dom.trebleControl].forEach(animateToZero);
+    updateValueLabels({ bass: 0, mid: 0, treble: 0 });
+
+    chrome.storage.session.set({
+      [`eq_${tabId}`]: { bass: 0, mid: 0, treble: 0 },
+      [`activePreset_${tabId}`]: null,
+    });
 
     removeActivePresets();
-    button.classList.add('active');
-
-    sendEQSettingsIfEnabled();
+    if (eqToggle.checked) sendEQSettings();
   });
+
+  // Ensure graph redraw
+  if (window.redrawEQGraph) {
+    window.redrawEQGraph(eq);
+  }
 });
-if (!window.eqCanvasInjected) {
-  window.eqCanvasInjected = true;
-
-  const context = new (window.AudioContext || window.webkitAudioContext)();
-  const filters = {
-    bass: context.createBiquadFilter(),
-    mid: context.createBiquadFilter(),
-    treble: context.createBiquadFilter()
-  };
-
-  filters.bass.type = 'lowshelf';
-  filters.bass.frequency.value = 60;
-  filters.bass.gain.value = 0;
-
-  filters.mid.type = 'peaking';
-  filters.mid.frequency.value = 1000;
-  filters.mid.Q.value = 1;
-  filters.mid.gain.value = 0;
-
-  filters.treble.type = 'highshelf';
-  filters.treble.frequency.value = 12000;
-  filters.treble.gain.value = 0;
-
-  const canvas = document.getElementById('eqCanvas');
-  const ctx = canvas.getContext('2d');
-
-  const POINTS = 512;
-  const freqs = new Float32Array(POINTS);
-  const fmin = 20, fmax = 20000;
-  for (let i = 0; i < POINTS; i++) {
-    const frac = i / (POINTS - 1);
-    freqs[i] = fmin * Math.pow(fmax / fmin, frac);
-  }
-  const mag = {
-    bass: new Float32Array(POINTS),
-    mid: new Float32Array(POINTS),
-    treble: new Float32Array(POINTS)
-  };
-
-  let frequencyData = [];
-
-  function dBtoLinear(db) { return Math.pow(10, db / 20); }
-  function dbToY(db, top, bottom, plotH) { return ((top - db) / (top - bottom)) * plotH; }
-  function freqToX(freq, plotW) { return (Math.log10(freq / 20) / Math.log10(20000 / 20)) * plotW; }
-
-  function wireSlider(slider, valElem, onChange) {
-    slider.addEventListener('input', e => {
-      valElem.textContent = e.target.value;
-      onChange(Number(e.target.value));
-    });
-  }
-
-  wireSlider(dom.bassControl, dom.bassValLabel, v => filters.bass.gain.value = v);
-  wireSlider(dom.midControl, dom.midValLabel, v => filters.mid.gain.value = v);
-  wireSlider(dom.trebleControl, dom.trebleValLabel, v => filters.treble.gain.value = v);
-
-  function computeResponses() {
-    filters.bass.getFrequencyResponse(freqs, mag.bass, new Float32Array(POINTS));
-    filters.mid.getFrequencyResponse(freqs, mag.mid, new Float32Array(POINTS));
-    filters.treble.getFrequencyResponse(freqs, mag.treble, new Float32Array(POINTS));
-  }
-
-  function draw() {
-    const w = canvas.width = canvas.clientWidth * devicePixelRatio;
-    const h = canvas.height = canvas.clientHeight * devicePixelRatio;
-    ctx.resetTransform();
-    ctx.scale(devicePixelRatio, devicePixelRatio);
-    ctx.clearRect(0, 0, canvas.clientWidth, canvas.clientHeight);
-
-    const margin = { left: 0, right: 0, top: 0, bottom: 0 };
-    const plotW = canvas.clientWidth;
-    const plotH = canvas.clientHeight;
-
-    // -------------------------------
-    // Draw Bar Visualizer
-    // -------------------------------
-    if (frequencyData.length) {
-      const bufferLength = frequencyData.length;
-      const barWidth = (plotW / bufferLength) * 1.5;
-      let x = 0;
-      for (let i = 0; i < bufferLength; i++) {
-        const barHeight = (frequencyData[i] / 255) * plotH;
-        const hue = (i / bufferLength) * 360;
-        ctx.fillStyle = `hsl(${hue}, 100%, 50%)`;
-        ctx.fillRect(x, plotH - barHeight, barWidth, barHeight);
-        x += barWidth;
-      }
-    }
-
-    // -------------------------------
-    // Draw EQ Curves
-    // -------------------------------
-    computeResponses();
-
-    const freqTicks = [20, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000];
-    ctx.strokeStyle = 'rgba(255,255,255,0.04)';
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    for (let f of freqTicks) {
-      const x = margin.left + freqToX(f, plotW);
-      ctx.moveTo(x, margin.top);
-      ctx.lineTo(x, margin.top + plotH);
-    }
-    ctx.stroke();
-
-    const dbTop = 31, dbBottom = -31;
-    ctx.beginPath();
-    for (let db = dbTop; db >= dbBottom; db -= 6) {
-      const y = margin.top + dbToY(db, dbTop, dbBottom, plotH);
-      ctx.moveTo(margin.left, y);
-      ctx.lineTo(margin.left + plotW, y);
-    }
-    ctx.stroke();
-
-    function drawCurve(arr, color, width = 2) {
-      ctx.beginPath();
-      ctx.lineWidth = width;
-      ctx.strokeStyle = color;
-      for (let i = 0; i < POINTS; i++) {
-        const x = margin.left + freqToX(freqs[i], plotW);
-        const y = margin.top + dbToY(20 * Math.log10(arr[i]), dbTop, dbBottom, plotH);
-        i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
-      }
-      ctx.stroke();
-    }
-
-    drawCurve(mag.treble, 'rgba(140,255,150,0.95)');
-    drawCurve(mag.mid, 'rgba(90,170,255,0.95)');
-    drawCurve(mag.bass, 'rgba(255,174,0,0.95)');
-
-    requestAnimationFrame(draw);
-  }
-
-  // -------------------------------
-  // Frequency Data Update
-  // -------------------------------
-  function updateVisualizer() {
-    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-      chrome.tabs.sendMessage(tabs[0].id, { action: "getFrequencyData" }, (response) => {
-        if (response && response.data) {
-          frequencyData = response.data;
-        }
-      });
-    });
-  }
-
-  // Start loop
-  setInterval(updateVisualizer, 50); // Update frequency data every 50ms
-  draw();
-
-  window.redrawEQGraph = (settings) => {
-    filters.bass.gain.value = settings.bass;
-    filters.mid.gain.value = settings.mid;
-    filters.treble.gain.value = settings.treble;
-  };
-
-  window.addEventListener('resize', () => { setTimeout(draw, 100); });
-}
