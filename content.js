@@ -111,9 +111,4 @@
 
   window.addEventListener('click', resumeContext);
   window.addEventListener('keydown', resumeContext);
-
-  // -------------------------------
-  // Expose nodes for debugging / graph
-  // -------------------------------
-  window._eqNodes = { context, preamp, filters, master };
 })();

@@ -363,9 +363,9 @@ if (!window.eqGraphInjected) {
     ctx.scale(devicePixelRatio, devicePixelRatio);
     ctx.clearRect(0, 0, canvas.clientWidth, canvas.clientHeight);
 
-    const margin = { left: 0, right: 0, top: 16, bottom: 16 };
-    const plotW = canvas.clientWidth - margin.left - margin.right;
-    const plotH = canvas.clientHeight - margin.top - margin.bottom;
+    const margin = { left: 0, right: 0, top: 0, bottom: 0 };
+    const plotW = canvas.clientWidth;
+    const plotH = canvas.clientHeight;
 
     ctx.fillStyle = 'rgba(255,255,255,0.02)';
     ctx.fillRect(margin.left, margin.top, plotW, plotH);
@@ -381,7 +381,7 @@ if (!window.eqGraphInjected) {
     }
     ctx.stroke();
 
-    const dbTop = 30, dbBottom = -30;
+    const dbTop = 31, dbBottom = -31;
     ctx.beginPath();
     for (let db = dbTop; db >= dbBottom; db -= 6) {
       const y = margin.top + dbToY(db, dbTop, dbBottom, plotH);
