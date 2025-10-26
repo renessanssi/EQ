@@ -35,7 +35,7 @@
     </div>
 
     <!-- Equalizer -->
-    <div class="equalizer-container">
+    <div class="gain-container">
       <div class="slider-container">
         <label for="bass">60 Hz</label>
         <input type="range" id="bass" min="-30" max="30" value="0" step="1" />
@@ -53,6 +53,43 @@
       </div>
     </div>
 
+    <!-- Frequency Config -->
+    <div class="frequency-container">
+      <div class="slider-container">
+        <label for="bassFreq">Hz</label>
+        <input type="range" id="bassFreq" min="20" max="250" value="60" step="1" />
+        <span id="bassFreqVal">60</span>
+      </div>
+      <div class="slider-container">
+        <label for="midFreq">Hz</label>
+        <input type="range" id="midFreq" min="400" max="4000" value="1000" step="10" />
+        <span id="midFreqVal">1000</span>
+      </div>
+      <div class="slider-container">
+        <label for="trebleFreq">Hz</label>
+        <input type="range" id="trebleFreq" min="8000" max="16000" value="12000" step="100" />
+        <span id="trebleFreqVal">12000</span>
+      </div>
+    </div>
+
+    <!-- Q Config -->
+    <div class="q-container">
+      <div class="slider-container">
+        <label for="bassQ">Bass Q</label>
+        <input type="range" id="bassQ" min="0.3" max="10" value="1" step="0.1" />
+        <span id="bassQVal">1.0</span>
+      </div>
+      <div class="slider-container">
+        <label for="midQ">Mid Q</label>
+        <input type="range" id="midQ" min="0.3" max="10" value="1" step="0.1" />
+        <span id="midQVal">1.0</span>
+      </div>
+      <div class="slider-container">
+        <label for="trebleQ">Treble Q</label>
+        <input type="range" id="trebleQ" min="0.3" max="10" value="1" step="0.1" />
+        <span id="trebleQVal">1.0</span>
+      </div>
+    </div>
     <!-- Master -->
     <div class="master-container">
       <div class="slider-container">

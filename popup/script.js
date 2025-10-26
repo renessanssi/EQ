@@ -125,3 +125,93 @@ chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
     window.redrawEQGraph(eq);
   }
 });
+
+// Prevent default browser context menu on sliders
+document.addEventListener("contextmenu", (e) => {
+  if (e.target.matches('input[type="range"]')) {
+    e.preventDefault();
+    openSliderOptions(e.target, e.pageX, e.pageY);
+  }
+});
+
+function openSliderOptions(slider, x, y) {
+  // Remove any previous menu
+  document.querySelector(".slider-menu")?.remove();
+
+  const menu = document.createElement("div");
+  menu.className = "slider-menu";
+  menu.innerHTML = `
+    <button data-action="reset">Reset</button>
+
+    <div class="submenu-parent">
+      <button>Configurate ▸</button>
+      <div class="submenu">
+        <button data-action="configGain">Gain</button>
+        <button data-action="configFrequency">Frequency</button>
+        <button data-action="configSlope">Q</button>
+      </div>
+    </div>
+
+    <div class="submenu-parent">
+      <button>Configurate all ▸</button>
+      <div class="submenu">
+        <button data-action="configAllGain">Gain</button>
+        <button data-action="configAllFrequency">Frequency</button>
+        <button data-action="configAllSlope">Q</button>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(menu);
+  menu.style.left = `${x}px`;
+  menu.style.top = `${y}px`;
+
+  // References
+  const gainContainer = document.querySelector(".gain-container");
+  const frequencyContainer = document.querySelector(".frequency-container");
+  const qContainer = document.querySelector(".q-container");
+
+  // Helper to hide all config groups first
+  const hideAllGroups = () => {
+    gainContainer.style.display = "none";
+    frequencyContainer.style.display = "none";
+    qContainer.style.display = "none";
+  };
+
+  // Handle option clicks
+  menu.addEventListener("click", (e) => {
+    const action = e.target.dataset.action;
+    if (!action) return;
+
+    hideAllGroups(); // Always start hidden
+
+    switch (action) {
+      case "configGain":
+      case "configAllGain":
+        gainContainer.style.display = "flex";
+        break;
+
+      case "configFrequency":
+      case "configAllFrequency":
+        frequencyContainer.style.display = "flex";
+        break;
+
+      case "configSlope":
+      case "configAllSlope":
+        qContainer.style.display = "flex";
+        break;
+    }
+
+    // Close the menu after selection
+    menu.remove();
+  });
+
+  // Close the menu when clicking outside
+  document.addEventListener(
+    "click",
+    (ev) => {
+      if (!menu.contains(ev.target)) menu.remove();
+    },
+    { once: true }
+  );
+}
