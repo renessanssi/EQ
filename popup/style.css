@@ -103,8 +103,7 @@ body {
   border-radius: 24px;
   position: relative;
   cursor: pointer;
-  background-color: #ff6257;
-  transition: background-color 0.3s ease;
+  background-color: #d65c5c;
   top: 0;
 }
 
@@ -118,11 +117,10 @@ body {
   background-color: rgb(231, 231, 231);
   border: 2px solid #333;
   border-radius: 50%;
-  transition: transform 0.3s ease;
 }
 
 .toggle:checked + .toggle-label {
-  background-color: #69ff6e;
+  background-color: #66d977;
 }
 
 .toggle:checked + .toggle-label::after {
