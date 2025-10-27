@@ -59,8 +59,8 @@ body {
   width: 608px;
   height: 64px;
   margin-top: 16px;
-  border-top: 1px solid white;
-  border-bottom: 1px solid white;
+  border-top: 2px solid white;
+  border-bottom: 2px solid white;
 }
 
 #eqCanvas,
@@ -102,7 +102,7 @@ body {
   position: relative;
   cursor: pointer;
   background-color: #d65c5c;
-  top: 2px;
+  top: 4px;
   border-radius: 12px;
   border: 2px solid #333;
 }
@@ -124,7 +124,7 @@ body {
 }
 
 .toggle:checked + .toggle-label::after {
-  transform: translateX(22px);
+  transform: translateX(21px);
 }
 
 /* ------------------------------- */
@@ -143,6 +143,7 @@ body {
   cursor: pointer;
   text-align: center;
   outline: none;
+  padding: 1px 0px;
 }
 
 .mode-container:hover,
@@ -325,8 +326,8 @@ input[type="range"]:disabled {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  margin-top: 32px;
-  margin-bottom: 16px;
+  margin-top: 40px;
+  margin-bottom: 12px;
   gap: 8px;
 }
 
