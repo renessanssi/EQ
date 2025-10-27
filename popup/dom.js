@@ -18,8 +18,17 @@ export const dom = {
   resetBtn: document.getElementById('resetBtn'),
   customBtn: document.getElementById('customBtn'),
 
+  contextMenu: document.getElementById('sliderMenu'),
+  resetOption: document.getElementById('resetOption'),
+  disableOption: document.getElementById('disableOption'),
+
   // --- Dynamic elements ---
   get presetButtons() {
     return Array.from(document.querySelectorAll('.preset'));
-  }
+  },
+
+  // --- Containers ---
+  configContainer: document.querySelector('.panel-container'),
+  visualizerContainer: document.querySelector('.visualizer-container'),
+  equalizerContainer: document.querySelector('.equalizer-container')
 };

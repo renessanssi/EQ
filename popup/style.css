@@ -1,3 +1,6 @@
+/* ------------------------------- */
+/* style.css                       */
+/* ------------------------------- */
 :root {
   --background-color: #121212;
   --border-color: #414141;
@@ -25,7 +28,7 @@ body {
 }
 
 /* ------------------------------- */
-/* BORDERS                        */
+/* BORDERS                         */
 /* ------------------------------- */
 .top-border,
 .left-border {
@@ -48,78 +51,109 @@ body {
   height: 100%;
 }
 
+
 /* ------------------------------- */
 /* VISUALIZER (Canvas)             */
 /* ------------------------------- */
-#eqCanvas {
+.visualizer-container {
+  position: relative;
   width: 608px;
   height: 64px;
-  display: block;
-  margin: 17px;
-  position: relative;
-  border-bottom: 1px solid white;
+  margin-top: 15px;
   border-top: 1px solid white;
+  border-bottom: 1px solid white;
 }
+
+#eqCanvas,
+#barCanvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
 
 /* ------------------------------- */
 /* TOGGLE BUTTON                   */
 /* ------------------------------- */
-.toggle-wrapper {
-  position: fixed;
-  bottom: 23px;
-  left: 49px;
-  z-index: 9999;
-}
-
-.toggle {
+.toggle-circle {
   display: none;
 }
 
-.toggle-wrapper label {
-  display: block;
-  position: relative;
-  width: 30px;
-  height: 15px;
-  border-radius: 999px;
-  border: 2px solid #ffffff;
-  background-color: #ccc;
+/* Keep your toggle circle styles */
+.toggle-circle-label {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background-color: #1f1f1f;
+  border: 2px solid #333;
   cursor: pointer;
-  transition: background-color 0.3s, border-color 0.3s;
+  transition: all 0.25s ease;
+  box-shadow: inset 0 0 4px #000, 0 0 4px #000;
+  position: relative;
 }
 
-.toggle-wrapper label::after {
+/* Inner glow indicator */
+.toggle-circle-label::after {
   content: "";
   position: absolute;
-  top: 2px;
-  left: 4px;
-  width: 11px;
-  height: 11px;
+  inset: 5px;
   border-radius: 50%;
-  background-color: white;
-  transition: transform 0.3s;
+  background-color: #333;
+  transition: all 0.25s ease;
+  box-shadow: 0 0 4px #000 inset;
 }
 
-.toggle:checked + label {
-  background-color: var(--toggle-color, #4a90e2);
-  border-color: #ffffff;
+/* Active (checked) state */
+.toggle-circle:checked + .toggle-circle-label {
+  background-color: var(--slider-accent);
+  border-color: #000;
+  box-shadow: 0 0 10px var(--slider-accent);
 }
 
-.toggle:checked + label::after {
-  transform: translateX(11px);
+.toggle-circle:checked + .toggle-circle-label::after {
+  background-color: #000;
+  box-shadow: 0 0 6px var(--slider-accent) inset;
+}
+
+/* Hover effect */
+.toggle-circle-label:hover {
+  filter: brightness(1.2);
 }
 
 /* ------------------------------- */
-/* MIXER CONTAINER                 */
+/* EQ CONTAINER                    */
 /* ------------------------------- */
-.mixer-container {
+.equalizer-container {
   display: flex;
-  align-items: flex-end;      /* align sliders at the bottom */
-  justify-content: space-between; /* preamp left, master right, others centered */
-  width: 608px;
-  margin: 8px;
+  justify-content: space-between;
+  align-items: flex-end;
+  width: 90%;
+  margin: 32px;
 }
 
-/* PREAMP and MASTER */
+.center-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.toggle-container {
+  position: static;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.gain-container {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-end;
+  gap: 50px;
+}
+
 .preamp-container,
 .master-container {
   display: flex;
@@ -127,31 +161,29 @@ body {
   align-items: center;
 }
 
-/* Center sections (gain, frequency, q) */
-.gain-container,
-.frequency-container,
-.q-container {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-
-  gap: 20px;
-}
-
-/* SLIDER CONTAINERS */
+/* ------------------------------- */
+/* SLIDER CONTAINER                */
+/* ------------------------------- */
 .slider-container {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
 }
 
 label {
+  position: absolute;
+  top: -24px;
+  width: max-content;
+  white-space: nowrap;
   font-size: 14px;
   margin-bottom: 8px;
   color: var(--text-color);
 }
 
 span {
+  position: absolute;
+  bottom: -24px;
   font-size: 13px;
   margin-top: 8px;
   color: var(--text-color);
@@ -165,13 +197,18 @@ span {
 input[type="range"] {
   position: relative;
   width: 8px;
-  height: 120px;
+  height: 110px;
   background: transparent;
   cursor: pointer;
   writing-mode: vertical-lr;
   direction: rtl;
   -webkit-appearance: none;
   appearance: none;
+}
+
+.preamp-container input[type="range"],
+.master-container input[type="range"] {
+  height: 140px;
 }
 
 input[type="range"]::-webkit-slider-runnable-track {
@@ -235,7 +272,6 @@ button {
   font-family: inherit;
   font-size: 13px;
   padding: 6px 14px;
-  border-radius: 6px;
   border: 1px solid #333;
   background-color: var(--button-bg);
   color: var(--text-color);
@@ -268,8 +304,7 @@ input[type="range"]:disabled {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  margin-top: 20px;
-  margin-bottom: 20px;
+  margin: 8px;
   gap: 8px;
 }
 
@@ -283,71 +318,27 @@ input[type="range"]:disabled {
   cursor: default;
 }
 
-#barVisualizer {
-  width: 100%;
-  height: 100px;
-  background: #111;
-  border-radius: 4px;
-  margin-top: 10px;
+/* ------------------------------- */
+/* RESET BUTTON                    */
+/* ------------------------------- */
+.reset {
+  background-color: #3b0f0f;
+  color: rgb(191, 191, 191);
+  border: 1px solid #552020;
 }
 
-.slider-menu {
-  position: absolute;
-  background: #222;
-  color: #eee;
-  border: 1px solid #555;
-  padding: 4px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
-  z-index: 9999;
-  display: flex;
-  flex-direction: column;
-  min-width: 160px;
-  font-family: sans-serif;
+.reset:hover:not(:disabled) {
+  background-color: #551a1a;
+  color: rgb(191, 191, 191);
+  border-color: #773333;
 }
 
-.slider-menu button {
-  background: none;
-  border: none;
-  color: inherit;
-  text-align: left;
-  padding: 6px 10px;
-  cursor: pointer;
-  border-radius: 4px;
-  width: 100%;
+.reset:active:not(:disabled) {
+  background-color: #ff4d4d;
+  color: #000;
 }
 
-.slider-menu button:hover {
-  background: #444;
-}
-
-/* Submenu handling */
-.submenu-parent {
-  position: relative;
-}
-
-.submenu {
-  display: none;
-  position: absolute;
-  left: 100%;
-  top: 0;
-  background: #222;
-  border: 1px solid #555;
-  padding: 4px;
-  min-width: 160px;
-  z-index: 9999;
-  flex-direction: column;
-}
-
-.submenu-parent:hover > .submenu {
-  display: flex;
-}
-
-.submenu button:hover {
-  background: #555;
-}
-
-/* style.css */
-.frequency-container,
-.q-container {
-  display: none;
+/* TOGGLE OFF */
+.visualizer-container.disabled, span.disabled {
+  opacity: 0.4;
 }

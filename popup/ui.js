@@ -37,7 +37,7 @@ export function updateValueLabels(values) {
 // -------------------------------
 
 /**
- * Enables or disables all EQ controls (sliders, buttons, canvas).
+ * Enables or disables all EQ controls (sliders, buttons, visualizer).
  * Visually dims the disabled state.
  * @param {boolean} enabled
  */
@@ -49,8 +49,8 @@ export function setControlsEnabled(enabled) {
     dom.trebleControl,
     dom.preampControl,
     dom.masterControl,
-  ].forEach((slider) => {
-    slider.disabled = !enabled;
+  ].forEach((control) => {
+    control.disabled = !enabled;
   });
 
   // Buttons (presets, reset, custom)
@@ -58,19 +58,9 @@ export function setControlsEnabled(enabled) {
     btn.disabled = !enabled;
   });
 
-  // Container styling
-  const eqContainer = document.querySelector('.equalizer-container');
-  if (eqContainer) {
-    eqContainer.classList.toggle('disabled', !enabled);
-  }
-
-  // Canvas visual feedback
-  const canvas = document.getElementById('eqCanvas');
-  if (canvas) {
-    canvas.style.opacity = enabled ? '1' : '0.4';
-    canvas.style.pointerEvents = enabled ? 'auto' : 'none';
-    canvas.style.filter = enabled ? 'none' : 'grayscale(20%)';
-  }
+  dom.configContainer.classList.toggle('disabled', !enabled);
+  dom.visualizerContainer.classList.toggle('disabled', !enabled);
+  dom.equalizerContainer.classList.toggle('disabled', !enabled);
 
   // Fade labels slightly when disabled
   [
@@ -80,8 +70,6 @@ export function setControlsEnabled(enabled) {
     dom.preampValLabel,
     dom.masterValLabel,
   ].forEach((label) => {
-    label.style.opacity = enabled ? '1' : '0.4';
-    label.style.filter = enabled ? 'none' : 'grayscale(20%)';
-    label.style.pointerEvents = enabled ? 'auto' : 'none';
+    label.classList.toggle('disabled', !enabled);
   });
 }

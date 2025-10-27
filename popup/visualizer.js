@@ -1,16 +1,12 @@
-import { dom } from './dom.js';
-
 // -------------------------------
-// Initialize & draw EQ Graph Canvas
+// EQ Graph (frequency response lines)
 // -------------------------------
-export function initEQGraph() {
-  // Prevent double injection
-  if (window.eqCanvasInjected) return;
-  window.eqCanvasInjected = true;
+export function initEQGraph(dom) {
+  if (window.eqLinesInjected) return;
+  window.eqLinesInjected = true;
 
   const context = new (window.AudioContext || window.webkitAudioContext)();
 
-  // Biquad filters for visual simulation (not actual audio filtering)
   const filters = {
     bass: context.createBiquadFilter(),
     mid: context.createBiquadFilter(),
@@ -19,22 +15,15 @@ export function initEQGraph() {
 
   filters.bass.type = 'lowshelf';
   filters.bass.frequency.value = 60;
-  filters.bass.gain.value = 0;
-
   filters.mid.type = 'peaking';
   filters.mid.frequency.value = 1000;
   filters.mid.Q.value = 1;
-  filters.mid.gain.value = 0;
-
   filters.treble.type = 'highshelf';
   filters.treble.frequency.value = 12000;
-  filters.treble.gain.value = 0;
 
-  // Canvas setup
   const canvas = document.getElementById('eqCanvas');
   const ctx = canvas.getContext('2d');
 
-  // Frequency response setup
   const POINTS = 512;
   const freqs = new Float32Array(POINTS);
   const fmin = 20, fmax = 20000;
@@ -49,15 +38,6 @@ export function initEQGraph() {
     treble: new Float32Array(POINTS),
   };
 
-  let frequencyData = [];
-
-  // -------------------------------
-  // Helper functions
-  // -------------------------------
-  function dBtoLinear(db) {
-    return Math.pow(10, db / 20);
-  }
-
   function dbToY(db, top, bottom, plotH) {
     return ((top - db) / (top - bottom)) * plotH;
   }
@@ -66,7 +46,6 @@ export function initEQGraph() {
     return (Math.log10(freq / 20) / Math.log10(20000 / 20)) * plotW;
   }
 
-  // Connect sliders to filters visually
   function wireSlider(slider, valElem, onChange) {
     slider.addEventListener('input', (e) => {
       valElem.textContent = e.target.value;
@@ -84,9 +63,6 @@ export function initEQGraph() {
     filters.treble.getFrequencyResponse(freqs, mag.treble, new Float32Array(POINTS));
   }
 
-  // -------------------------------
-  // Draw Loop
-  // -------------------------------
   function draw() {
     const w = (canvas.width = canvas.clientWidth * devicePixelRatio);
     const h = (canvas.height = canvas.clientHeight * devicePixelRatio);
@@ -94,61 +70,74 @@ export function initEQGraph() {
     ctx.scale(devicePixelRatio, devicePixelRatio);
     ctx.clearRect(0, 0, canvas.clientWidth, canvas.clientHeight);
 
-    const margin = { left: 0, right: 0, top: 0, bottom: 0 };
     const plotW = canvas.clientWidth;
     const plotH = canvas.clientHeight;
+    const dbTop = 31, dbBottom = -31;
 
-    // --- Bar Visualizer ---
-    if (frequencyData.length) {
-      const bufferLength = frequencyData.length;
-      const barWidth = (plotW / bufferLength) * 1.5;
-      let x = 0;
-      for (let i = 0; i < bufferLength; i++) {
-        const barHeight = (frequencyData[i] / 255) * plotH;
-        const hue = (i / bufferLength) * 360;
-        ctx.fillStyle = `hsl(${hue}, 100%, 50%)`;
-        ctx.fillRect(x, plotH - barHeight, barWidth, barHeight);
-        x += barWidth;
-      }
-    }
-
-    // --- Frequency Grid ---
+    // Frequency grid
     const freqTicks = [20, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000];
     ctx.strokeStyle = 'rgba(255,255,255,0.04)';
     ctx.lineWidth = 1;
     ctx.beginPath();
     for (let f of freqTicks) {
-      const x = margin.left + freqToX(f, plotW);
-      ctx.moveTo(x, margin.top);
-      ctx.lineTo(x, margin.top + plotH);
+      const x = freqToX(f, plotW);
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, plotH);
     }
     ctx.stroke();
 
-    // --- Decibel Grid ---
-    const dbTop = 31, dbBottom = -31;
+    // Decibel grid
     ctx.beginPath();
     for (let db = dbTop; db >= dbBottom; db -= 6) {
-      const y = margin.top + dbToY(db, dbTop, dbBottom, plotH);
-      ctx.moveTo(margin.left, y);
-      ctx.lineTo(margin.left + plotW, y);
+      const y = dbToY(db, dbTop, dbBottom, plotH);
+      ctx.moveTo(0, y);
+      ctx.lineTo(plotW, y);
     }
     ctx.stroke();
 
-    // --- EQ Curves ---
+    // EQ Curves
     computeResponses();
+
+    function drawCurve(arr, color, width = 2) {
+      // Compute path
+      const path = new Path2D();
+      for (let i = 0; i < POINTS; i++) {
+        const x = freqToX(freqs[i], plotW);
+        const y = dbToY(20 * Math.log10(arr[i]), dbTop, dbBottom, plotH);
+        if (i === 0) path.moveTo(x, y);
+        else path.lineTo(x, y);
+      }
+
+      // ---- GLOW LAYER ----
+      ctx.save();
+      ctx.shadowColor = color;
+      ctx.shadowBlur = 10;           // intensity of glow
+      ctx.lineWidth = width + 1;     // slightly thicker for the glow
+      ctx.strokeStyle = color;
+      ctx.globalCompositeOperation = 'lighter'; // additive blending
+      ctx.stroke(path);
+      ctx.restore();
+    }
+/*
     function drawCurve(arr, color, width = 2) {
       ctx.beginPath();
       ctx.lineWidth = width;
       ctx.strokeStyle = color;
+
       for (let i = 0; i < POINTS; i++) {
-        const x = margin.left + freqToX(freqs[i], plotW);
-        const y = margin.top + dbToY(20 * Math.log10(arr[i]), dbTop, dbBottom, plotH);
-        if (i === 0) ctx.moveTo(x, y);
-        else ctx.lineTo(x, y);
+        const x = freqToX(freqs[i], plotW);
+        const y = dbToY(20 * Math.log10(arr[i]), dbTop, dbBottom, plotH);
+
+        if (i === 0) {
+          ctx.moveTo(x, y);
+        } else {
+          ctx.lineTo(x, y);
+        }
       }
+
       ctx.stroke();
     }
-
+*/
     drawCurve(mag.treble, 'rgba(140,255,150,0.95)');
     drawCurve(mag.mid, 'rgba(90,170,255,0.95)');
     drawCurve(mag.bass, 'rgba(255,174,0,0.95)');
@@ -156,10 +145,51 @@ export function initEQGraph() {
     requestAnimationFrame(draw);
   }
 
-  // -------------------------------
-  // Frequency Data Updater
-  // -------------------------------
-  function updateVisualizer() {
+  draw();
+
+  // Public updater
+  window.redrawEQGraph = (settings) => {
+    filters.bass.gain.value = settings.bass;
+    filters.mid.gain.value = settings.mid;
+    filters.treble.gain.value = settings.treble;
+  };
+}
+
+// -------------------------------
+// Bar Graph Visualizer (separate)
+// -------------------------------
+export function initBarGraph() {
+  if (window.barGraphInjected) return;
+  window.barGraphInjected = true;
+
+  const canvas = document.getElementById('barCanvas');
+  const ctx = canvas.getContext('2d');
+  let frequencyData = [];
+
+  function drawBars() {
+    const w = (canvas.width = canvas.clientWidth * devicePixelRatio);
+    const h = (canvas.height = canvas.clientHeight * devicePixelRatio);
+    ctx.resetTransform();
+    ctx.scale(devicePixelRatio, devicePixelRatio);
+    ctx.clearRect(0, 0, canvas.clientWidth, canvas.clientHeight);
+
+    if (frequencyData.length) {
+      const bufferLength = frequencyData.length;
+      const barWidth = (canvas.clientWidth / bufferLength) * 1.5;
+      let x = 0;
+      for (let i = 0; i < bufferLength; i++) {
+        const barHeight = (frequencyData[i] / 255) * canvas.clientHeight;
+        const hue = (i / bufferLength) * 360;
+        ctx.fillStyle = `hsl(${hue}, 100%, 50%)`;
+        ctx.fillRect(x, canvas.clientHeight - barHeight, barWidth, barHeight);
+        x += barWidth;
+      }
+    }
+
+    requestAnimationFrame(drawBars);
+  }
+
+  function updateData() {
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
       if (!tabs?.[0]?.id) return;
       chrome.tabs.sendMessage(tabs[0].id, { action: 'getFrequencyData' }, (response) => {
@@ -168,25 +198,10 @@ export function initEQGraph() {
         }
       });
     });
+
+    requestAnimationFrame(updateData);
   }
 
-  // Update frequency data every 50ms
-  setInterval(updateVisualizer, 50);
-
-  // Start draw loop
-  draw();
-
-  // -------------------------------
-  // Public redraw function
-  // -------------------------------
-  window.redrawEQGraph = (settings) => {
-    filters.bass.gain.value = settings.bass;
-    filters.mid.gain.value = settings.mid;
-    filters.treble.gain.value = settings.treble;
-  };
-
-  // Redraw on resize
-  window.addEventListener('resize', () => {
-    setTimeout(draw, 100);
-  });
+  drawBars();
+  updateData();
 }
