@@ -58,8 +58,9 @@ export function setControlsEnabled(enabled) {
     btn.disabled = !enabled;
   });
 
-  dom.configContainer.classList.toggle('disabled', !enabled);
   dom.visualizerContainer.classList.toggle('disabled', !enabled);
+  dom.modeContainer.classList.toggle('disabled', !enabled);
+  dom.configuratorContainer.classList.toggle('disabled', !enabled);
   dom.equalizerContainer.classList.toggle('disabled', !enabled);
 
   // Fade labels slightly when disabled

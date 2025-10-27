@@ -51,7 +51,6 @@ body {
   height: 100%;
 }
 
-
 /* ------------------------------- */
 /* VISUALIZER (Canvas)             */
 /* ------------------------------- */
@@ -74,6 +73,20 @@ body {
   display: block;
 }
 
+/* ------------------------------- */
+/* CONTROL CONTAINER               */
+/* ------------------------------- */
+.control-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 70%;
+  margin-top: 16px;
+}
+
+.toggle-container {
+  display: flex;
+}
 
 /* ------------------------------- */
 /* TOGGLE BUTTON                   */
@@ -82,7 +95,6 @@ body {
   display: none;
 }
 
-/* Keep your toggle circle styles */
 .toggle-circle-label {
   width: 28px;
   height: 28px;
@@ -93,20 +105,19 @@ body {
   transition: all 0.25s ease;
   box-shadow: inset 0 0 4px #000, 0 0 4px #000;
   position: relative;
+  top: 0;
 }
 
-/* Inner glow indicator */
 .toggle-circle-label::after {
   content: "";
   position: absolute;
-  inset: 5px;
+  inset: 7px;
   border-radius: 50%;
   background-color: #333;
   transition: all 0.25s ease;
   box-shadow: 0 0 4px #000 inset;
 }
 
-/* Active (checked) state */
 .toggle-circle:checked + .toggle-circle-label {
   background-color: var(--slider-accent);
   border-color: #000;
@@ -118,9 +129,53 @@ body {
   box-shadow: 0 0 6px var(--slider-accent) inset;
 }
 
-/* Hover effect */
 .toggle-circle-label:hover {
   filter: brightness(1.2);
+}
+
+/* ------------------------------- */
+/* MODE / CONFIG CONTAINER         */
+/* ------------------------------- */
+.mode-container,
+.configurator-container {
+  flex: 1;
+  max-width: 180px;
+  text-align: center;
+  font-family: inherit;
+  font-size: 13px;
+  color: var(--text-color);
+  background-color: var(--button-bg);
+  border: 1px solid #333;
+  padding: 6px 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.mode-container:hover,
+.configurator-container:hover {
+  background-color: var(--button-hover);
+  border-color: #444;
+}
+
+.mode-container:focus,
+.configurator-container:focus {
+  outline: none;
+  box-shadow: 0 0 6px var(--slider-accent);
+  border-color: var(--slider-accent);
+}
+
+.mode-container:active,
+.configurator-container:active {
+  background-color: var(--button-active-bg);
+  color: var(--button-active-color);
+}
+
+.mode-container option,
+.configurator-container option {
+  background-color: var(--button-bg);
+  color: var(--text-color);
 }
 
 /* ------------------------------- */
@@ -131,20 +186,7 @@ body {
   justify-content: space-between;
   align-items: flex-end;
   width: 90%;
-  margin: 32px;
-}
-
-.center-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.toggle-container {
-  position: static;
-  display: flex;
-  justify-content: center;
-  align-items: center;
+  margin: 16px;
 }
 
 .gain-container {
@@ -304,7 +346,8 @@ input[type="range"]:disabled {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  margin: 8px;
+  margin-top: 24px;
+  margin-bottom: 16px;
   gap: 8px;
 }
 
@@ -338,7 +381,15 @@ input[type="range"]:disabled {
   color: #000;
 }
 
-/* TOGGLE OFF */
+
+/* ------------------------------- */
+/* TOGGLED OFF                     */
+/* ------------------------------- */
 .visualizer-container.disabled, span.disabled {
   opacity: 0.4;
+}
+
+.mode-container.disabled, .configurator-container.disabled {
+  opacity: 0.4;
+  pointer-events: none;
 }

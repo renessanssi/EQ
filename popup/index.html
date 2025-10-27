@@ -20,11 +20,30 @@
     <canvas id="eqCanvas"></canvas>
   </div>
 
-  <div class="panel-container">
+  <!-- Control Panel -->
+  <div class="control-container">
+    <!-- Left Selection Box -->
+    <select class="mode-container">
+      <option value="bands">3-Band Equalizer</option>
+      <option value="filters">High Pass / Low Pass</option>
+      <option value="effects">Effects</option>
+    </select>
 
+    <!-- Toggle -->
+    <div class="toggle-container">
+      <input type="checkbox" id="eqToggle" class="toggle-circle">
+      <label for="eqToggle" class="toggle-circle-label"></label>
+    </div>
+
+    <!-- Right Selection Box -->
+    <select class="configurator-container">
+      <option value="gain">Gain (dB)</option>
+      <option value="frequency">Frequency (Hz)</option>
+      <option value="slope">Slope (Q)</option>
+    </select>
   </div>
-
-  <!-- Mixer -->
+  
+  <!-- Equalizer -->
   <div class="equalizer-container">
     <!-- Preamp -->
     <div class="preamp-container">
@@ -34,32 +53,26 @@
         <span id="preampVal">0</span>
       </div>
     </div>
-    <!-- Center Panel -->
-    <div class="center-container">
-      <!-- Toggle -->
-      <div class="toggle-container">
-        <input type="checkbox" id="eqToggle" class="toggle-circle">
-        <label for="eqToggle" class="toggle-circle-label"></label>
+
+    <!-- Bands -->
+    <div class="gain-container">
+      <div class="slider-container">
+        <label for="bass">60 Hz</label>
+        <input type="range" id="bass" min="-30" max="30" value="0" step="1" />
+        <span id="bassVal">0</span>
       </div>
-      <!-- Sliders -->
-      <div class="gain-container">
-        <div class="slider-container">
-          <label for="bass">60 Hz</label>
-          <input type="range" id="bass" min="-30" max="30" value="0" step="1" />
-          <span id="bassVal">0</span>
-        </div>
-        <div class="slider-container">
-          <label for="mid">1 kHz</label>
-          <input type="range" id="mid" min="-30" max="30" value="0" step="1" />
-          <span id="midVal">0</span>
-        </div>
-        <div class="slider-container">
-          <label for="treble">20 kHz</label>
-          <input type="range" id="treble" min="-30" max="30" value="0" step="1" />
-          <span id="trebleVal">0</span>
-        </div>
+      <div class="slider-container">
+        <label for="mid">1 kHz</label>
+        <input type="range" id="mid" min="-30" max="30" value="0" step="1" />
+        <span id="midVal">0</span>
+      </div>
+      <div class="slider-container">
+        <label for="treble">20 kHz</label>
+        <input type="range" id="treble" min="-30" max="30" value="0" step="1" />
+        <span id="trebleVal">0</span>
       </div>
     </div>
+    
     <!-- Master -->
     <div class="master-container">
       <div class="slider-container">
