@@ -55,7 +55,7 @@
     </div>
 
     <!-- Bands -->
-    <div class="gain-container">
+    <div class="band-container">
       <div class="slider-container">
         <label for="bass">60 Hz</label>
         <input type="range" id="bass" min="-30" max="30" value="0" step="1" />
@@ -67,12 +67,38 @@
         <span id="midVal">0</span>
       </div>
       <div class="slider-container">
-        <label for="treble">20 kHz</label>
+        <label for="treble">12 kHz</label>
         <input type="range" id="treble" min="-30" max="30" value="0" step="1" />
         <span id="trebleVal">0</span>
       </div>
     </div>
-    
+
+    <div class="pass-container" display="none">
+      <div class="slider-container">
+        <label for="high">High</label>
+        <input type="range" id="high" min="0" max="30" value="0" step="1" />
+        <span id="highVal">0</span>
+      </div>
+      <div class="slider-container">
+        <label for="low">Low</label>
+        <input type="range" id="low" min="0" max="30" value="0" step="1" />
+        <span id="lowVal">0</span>
+      </div>
+    </div>
+
+    <div class="effect-container" display="none">
+      <div class="slider-container">
+        <label for="reverb">Reverb</label>
+        <input type="range" id="reverb" min="0" max="30" value="0" step="1" />
+        <span id="reverbVal">0</span>
+      </div>
+      <div class="slider-container">
+        <label for="echo">Echo</label>
+        <input type="range" id="echo" min="0" max="30" value="0" step="1" />
+        <span id="echoVal">0</span>
+      </div>
+    </div>
+
     <!-- Master -->
     <div class="master-container">
       <div class="slider-container">

@@ -129,3 +129,73 @@ chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
     window.redrawEQGraph(eq);
   }
 });
+
+// script.js
+
+const modeSelect = document.querySelector('.mode-container');
+const configSelect = document.querySelector('.configurator-container');
+
+// Define options for each mode
+const optionsByMode = {
+  bands: [
+    { value: 'gain', text: 'Gain (dB)' },
+    { value: 'frequency', text: 'Frequency (Hz)' },
+    { value: 'slope', text: 'Slope (Q)' }
+  ],
+  filters: [
+    { value: 'frequency', text: 'Frequency (Hz)' },
+    { value: 'slope', text: 'Slope (Q)' }
+  ],
+  effects: [
+    { value: 'gain', text: 'Gain (dB)' }
+  ]
+};
+
+// Containers
+const bandContainer = document.querySelector('.band-container');
+const passContainer = document.querySelector('.pass-container');
+const effectContainer = document.querySelector('.effect-container');
+
+// Function to update configurator options
+function updateConfiguratorOptions() {
+  const selectedMode = modeSelect.value;
+
+  // Clear existing options
+  configSelect.innerHTML = '';
+
+  // Add new options
+  optionsByMode[selectedMode].forEach(opt => {
+    const optionElement = document.createElement('option');
+    optionElement.value = opt.value;
+    optionElement.textContent = opt.text;
+    configSelect.appendChild(optionElement);
+  });
+}
+
+// Function to update container visibility
+function updateContainers() {
+  const mode = modeSelect.value;
+
+  // Hide all by default
+  bandContainer.style.display = 'none';
+  passContainer.style.display = 'none';
+  effectContainer.style.display = 'none';
+
+  if (mode === 'bands') {
+    bandContainer.style.display = 'flex';
+  } else if (mode === 'filters') {
+    passContainer.style.display = 'flex';
+  } else if (mode === 'effects') {
+    effectContainer.style.display = 'flex';
+  }
+}
+
+// Initialize on page load
+updateConfiguratorOptions();
+updateContainers();
+
+// Listen for mode changes
+modeSelect.addEventListener('change', () => {
+  updateConfiguratorOptions();
+  updateContainers();
+});
