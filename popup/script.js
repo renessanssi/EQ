@@ -7,19 +7,6 @@ import { removeActivePresets, initPresetButtons } from './presets-handler.js';
 import { initEQGraph, initBarGraph } from './visualizer.js';
 
 // -------------------------------
-// Inject content.js
-// -------------------------------
-document.addEventListener("DOMContentLoaded", async () => {
-  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-  if (!tab.url || !tab.url.startsWith('http')) return;
-
-  await chrome.scripting.executeScript({
-    target: { tabId: tab.id },
-    files: ['content.js']
-  });
-});
-
-// -------------------------------
 // Initialize popup
 // -------------------------------
 chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {  
@@ -27,6 +14,19 @@ chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
   if (!tab?.id) return;
   const tabId = tab.id;
   setCurrentTab(tabId);
+
+  const { [`hasRun_${tabId}`]: hasRun } = await chrome.storage.session.get(`hasRun_${tabId}`);
+
+  if (!hasRun) {
+    if (tab.url.startsWith('http')) {
+      await chrome.scripting.executeScript({target: { tabId: tab.id }, files: ['content.js']});
+      await chrome.storage.session.set({ [`hasRun_${tabId}`]: true });
+
+      initBarGraph();
+    } else {
+      dom.toggleContainer.classList.add('disabled');
+    }
+  }
 
   // Load previously saved settings
   const { eq, enabled, activePreset } = await loadTabSettings(tabId);
@@ -38,12 +38,10 @@ chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
   dom.preampControl.value = eq.preamp;
   dom.masterControl.value = eq.master;
 
-  if (!tab.url.startsWith('http')) dom.toggleContainer.classList.add('disabled');
   updateValueLabels(eq);
   setControlsEnabled(enabled);
   initPresetButtons(tabId);
   initEQGraph(dom);
-  if (tab.url.startsWith('http')) initBarGraph();
 
   // Restore active preset button
   removeActivePresets();
@@ -57,8 +55,7 @@ chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
   }
 
   // Initialize toggle state
-  const eqToggle = document.getElementById('eqToggle');
-  eqToggle.checked = enabled;
+  dom.eqToggle.checked = enabled;
   if (enabled) {
     for (const [key, value] of Object.entries(eq)) {
       sendSingleEQUpdate(key, value);
@@ -68,8 +65,8 @@ chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
   // -------------------------------
   // Toggle ON/OFF handler
   // -------------------------------
-  eqToggle.addEventListener('change', () => {
-    const isEnabled = eqToggle.checked;
+  dom.eqToggle.addEventListener('change', () => {
+    const isEnabled = dom.eqToggle.checked;
     setControlsEnabled(isEnabled);
     chrome.runtime.sendMessage({ type: 'toggleChanged', enabled: isEnabled, tabId });
     chrome.storage.session.set({ [`eqEnabled_${tabId}`]: isEnabled });

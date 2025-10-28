@@ -34,5 +34,6 @@ export const dom = {
   equalizerContainer: document.querySelector('.equalizer-container'),
 
   // --- Toggle ---
-  toggleContainer: document.querySelector('.toggle-container')
+  toggleContainer: document.querySelector('.toggle-container'),
+  eqToggle: document.getElementById('eqToggle')
 };
