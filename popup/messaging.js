@@ -30,28 +30,18 @@ export function getCurrentTab() {
  * Sends the current EQ slider values to the active tab’s content script.
  * Also saves the EQ values in session storage for persistence.
  */
-export function sendEQSettings() {
+export function sendSingleEQUpdate(type, value) {
   if (!currentTabId) return;
 
-  // Gather current EQ slider values
-  const eqSettings = {
-    bass: Number(dom.bassControl.value),
-    mid: Number(dom.midControl.value),
-    treble: Number(dom.trebleControl.value),
-    preamp: Number(dom.preampControl.value),
-    master: Number(dom.masterControl.value),
-  };
+  const update = { [type]: value };
 
-  // Save settings for this tab
-  saveTabSettings(currentTabId, eqSettings);
-
-  // Dispatch the settings into the tab’s context
   chrome.scripting.executeScript({
     target: { tabId: currentTabId },
     func: (settings) => {
+      // Dispatch only the changed value
       window.dispatchEvent(new CustomEvent('updateEqualizer', { detail: settings }));
     },
-    args: [eqSettings],
+    args: [update],
   });
 }
 

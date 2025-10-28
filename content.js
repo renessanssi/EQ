@@ -83,15 +83,21 @@
   // Listen for EQ updates
   // -------------------------------
   window.addEventListener('updateEqualizer', (e) => {
-    const settings = e.detail;
-    if (!settings) return;
+    const s = e.detail;
+    if (!s) return;
 
-    preamp.gain.value = Math.pow(10, (settings.preamp ?? 0) / 20);
-    filters.bass.gain.value = settings.bass ?? 0;
-    filters.mid.gain.value = settings.mid ?? 0;
-    filters.treble.gain.value = settings.treble ?? 0;
-    master.gain.value = (settings.master ?? 100) / 100;
+    if (s.preamp !== undefined)
+      preamp.gain.value = Math.pow(10, s.preamp / 20);
+    if (s.bass !== undefined)
+      filters.bass.gain.value = s.bass;
+    if (s.mid !== undefined)
+      filters.mid.gain.value = s.mid;
+    if (s.treble !== undefined)
+      filters.treble.gain.value = s.treble;
+    if (s.master !== undefined)
+      master.gain.value = s.master / 100;
   });
+
 
   window.addEventListener('disableEqualizer', () => {
     preamp.gain.value = 1;

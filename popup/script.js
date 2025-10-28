@@ -1,6 +1,6 @@
 import { dom } from './dom.js';
 import { loadTabSettings } from './state.js';
-import { setCurrentTab, sendEQSettings } from './messaging.js';
+import { setCurrentTab, sendSingleEQUpdate } from './messaging.js';
 import { updateValueLabels, setControlsEnabled } from './ui.js';
 import { animateToZero } from './animation.js';
 import { removeActivePresets, initPresetButtons } from './presets-handler.js';
@@ -22,7 +22,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 // -------------------------------
 // Initialize popup
 // -------------------------------
-chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
+chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {  
   const tab = tabs[0];
   if (!tab?.id) return;
   const tabId = tab.id;
@@ -38,6 +38,7 @@ chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
   dom.preampControl.value = eq.preamp;
   dom.masterControl.value = eq.master;
 
+  if (!tab.url.startsWith('http')) dom.toggleContainer.classList.add('disabled');
   updateValueLabels(eq);
   setControlsEnabled(enabled);
   initPresetButtons(tabId);
@@ -58,7 +59,11 @@ chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
   // Initialize toggle state
   const eqToggle = document.getElementById('eqToggle');
   eqToggle.checked = enabled;
-  if (enabled) sendEQSettings();
+  if (enabled) {
+    for (const [key, value] of Object.entries(eq)) {
+      sendSingleEQUpdate(key, value);
+    }
+  }
 
   // -------------------------------
   // Toggle ON/OFF handler
@@ -66,36 +71,24 @@ chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
   eqToggle.addEventListener('change', () => {
     const isEnabled = eqToggle.checked;
     setControlsEnabled(isEnabled);
-
-    if (tab.url.startsWith('http')) {
-      chrome.runtime.sendMessage({ type: 'toggleChanged', enabled: isEnabled, tabId });
-      chrome.storage.session.set({ [`eqEnabled_${tabId}`]: isEnabled });
-      if (isEnabled) sendEQSettings();
-    } 
+    chrome.runtime.sendMessage({ type: 'toggleChanged', enabled: isEnabled, tabId });
+    chrome.storage.session.set({ [`eqEnabled_${tabId}`]: isEnabled });
+    for (const [key, value] of Object.entries(eq)) {
+      sendSingleEQUpdate(key, value);
+    }
   });
 
   // -------------------------------
   // Slider handlers
   // -------------------------------
-  dom.preampControl.addEventListener('input', () => {
-    updateValueLabels({ preamp: Number(dom.preampControl.value) });
-    if (eqToggle.checked) sendEQSettings();
-  });
-
-  dom.masterControl.addEventListener('input', () => {
-    updateValueLabels({ master: Number(dom.masterControl.value) });
-    if (eqToggle.checked) sendEQSettings();
-  });
-
   [dom.bassControl, dom.midControl, dom.trebleControl].forEach((slider) => {
     slider.addEventListener('input', (event) => {
-      updateValueLabels({
-        bass: Number(dom.bassControl.value),
-        mid: Number(dom.midControl.value),
-        treble: Number(dom.trebleControl.value)
-      });
+      const id = event.target.id; // e.g., "bass", "mid", "treble"
+      const value = Number(event.target.value);
 
-      if (eqToggle.checked) sendEQSettings();
+      updateValueLabels({ [id]: value });
+
+      if (eqToggle.checked) sendSingleEQUpdate(id, value);
 
       if (event.isTrusted) {
         removeActivePresets();
@@ -103,6 +96,18 @@ chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
         chrome.storage.session.set({ [`activePreset_${tabId}`]: 'custom' });
       }
     });
+  });
+
+  dom.preampControl.addEventListener('input', () => {
+    const value = Number(dom.preampControl.value);
+    updateValueLabels({ preamp: value });
+    sendSingleEQUpdate('preamp', value);
+  });
+
+  dom.masterControl.addEventListener('input', () => {
+    const value = Number(dom.masterControl.value);
+    updateValueLabels({ master: value });
+    sendSingleEQUpdate('master', value);
   });
 
   // -------------------------------
@@ -118,120 +123,13 @@ chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
     });
 
     removeActivePresets();
-    if (eqToggle.checked) sendEQSettings();
+    for (const [key, value] of Object.entries(eq)) {
+      sendSingleEQUpdate(key, value);
+    }
   });
 
   // Ensure graph redraw
   if (window.redrawEQGraph) {
     window.redrawEQGraph(eq);
   }
-});
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// script.js
-
-const modeSelect = document.querySelector('.mode-container');
-const configSelect = document.querySelector('.configurator-container');
-
-// Define options for each mode
-const optionsByMode = {
-  bands: [
-    { value: 'gain', text: 'Gain (dB)' },
-    { value: 'frequency', text: 'Frequency (Hz)' },
-    { value: 'slope', text: 'Slope (Q)' }
-  ],
-  filters: [
-    { value: 'frequency', text: 'Frequency (Hz)' },
-    { value: 'slope', text: 'Slope (Q)' }
-  ],
-  effects: [
-    { value: 'gain', text: 'Gain (dB)' }
-  ]
-};
-
-// Containers
-const bandContainer = document.querySelector('.band-container');
-const passContainer = document.querySelector('.pass-container');
-const effectContainer = document.querySelector('.effect-container');
-
-// Function to update configurator options
-function updateConfiguratorOptions() {
-  const selectedMode = modeSelect.value;
-
-  // Clear existing options
-  configSelect.innerHTML = '';
-
-  // Add new options
-  optionsByMode[selectedMode].forEach(opt => {
-    const optionElement = document.createElement('option');
-    optionElement.value = opt.value;
-    optionElement.textContent = opt.text;
-    configSelect.appendChild(optionElement);
-  });
-}
-
-// Function to update container visibility
-function updateContainers() {
-  const mode = modeSelect.value;
-
-  // Hide all by default
-  bandContainer.style.display = 'none';
-  passContainer.style.display = 'none';
-  effectContainer.style.display = 'none';
-
-  if (mode === 'bands') {
-    bandContainer.style.display = 'flex';
-  } else if (mode === 'filters') {
-    passContainer.style.display = 'flex';
-  } else if (mode === 'effects') {
-    effectContainer.style.display = 'flex';
-  }
-}
-
-// Initialize on page load
-updateConfiguratorOptions();
-updateContainers();
-
-// Listen for mode changes
-modeSelect.addEventListener('change', () => {
-  updateConfiguratorOptions();
-  updateContainers();
 });
