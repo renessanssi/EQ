@@ -111,33 +111,14 @@ export function initEQGraph(dom) {
       // ---- GLOW LAYER ----
       ctx.save();
       ctx.shadowColor = color;
-      ctx.shadowBlur = 10;           // intensity of glow
-      ctx.lineWidth = width + 1;     // slightly thicker for the glow
+      ctx.shadowBlur = 10;
+      ctx.lineWidth = width + 1;
       ctx.strokeStyle = color;
-      ctx.globalCompositeOperation = 'lighter'; // additive blending
+      ctx.globalCompositeOperation = 'lighter';
       ctx.stroke(path);
       ctx.restore();
     }
-/*
-    function drawCurve(arr, color, width = 2) {
-      ctx.beginPath();
-      ctx.lineWidth = width;
-      ctx.strokeStyle = color;
 
-      for (let i = 0; i < POINTS; i++) {
-        const x = freqToX(freqs[i], plotW);
-        const y = dbToY(20 * Math.log10(arr[i]), dbTop, dbBottom, plotH);
-
-        if (i === 0) {
-          ctx.moveTo(x, y);
-        } else {
-          ctx.lineTo(x, y);
-        }
-      }
-
-      ctx.stroke();
-    }
-*/
     drawCurve(mag.treble, 'rgba(140,255,150,0.95)');
     drawCurve(mag.mid, 'rgba(90,170,255,0.95)');
     drawCurve(mag.bass, 'rgba(255,174,0,0.95)');
@@ -165,8 +146,11 @@ export function initBarGraph() {
   const canvas = document.getElementById('barCanvas');
   const ctx = canvas.getContext('2d');
   let frequencyData = [];
+  let stop = false;
 
   function drawBars() {
+    if (stop) return;
+
     const w = (canvas.width = canvas.clientWidth * devicePixelRatio);
     const h = (canvas.height = canvas.clientHeight * devicePixelRatio);
     ctx.resetTransform();
@@ -190,6 +174,8 @@ export function initBarGraph() {
   }
 
   function updateData() {
+    if (stop) return;
+
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
       if (!tabs?.[0]?.id) return;
       chrome.tabs.sendMessage(tabs[0].id, { action: 'getFrequencyData' }, (response) => {
@@ -204,4 +190,8 @@ export function initBarGraph() {
 
   drawBars();
   updateData();
+  
+  window.addEventListener("beforeunload", () => {
+    stop = true;
+  });
 }

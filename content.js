@@ -64,7 +64,7 @@
   }
 
   document.querySelectorAll('audio, video').forEach(setupMediaElement);
-
+  
   const observer = new MutationObserver((mutations) => {
     for (const mutation of mutations) {
       for (const node of mutation.addedNodes) {

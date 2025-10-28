@@ -10,15 +10,9 @@ import { initEQGraph, initBarGraph } from './visualizer.js';
 // Inject content.js
 // -------------------------------
 document.addEventListener("DOMContentLoaded", async () => {
-  // Get current active tab
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  if (!tab.url || !tab.url.startsWith('http')) return;
 
-  if (!tab || !tab.id || !tab.url) return;
-  
-  // Only run on http or https pages
-  if (!tab.url.startsWith("http://") && !tab.url.startsWith("https://")) return;  
-
-  // Inject content.js dynamically
   await chrome.scripting.executeScript({
     target: { tabId: tab.id },
     files: ['content.js']
@@ -48,7 +42,7 @@ chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
   setControlsEnabled(enabled);
   initPresetButtons(tabId);
   initEQGraph(dom);
-  if (tab.url.startsWith("http://") || tab.url.startsWith("https://")) initBarGraph();
+  if (tab.url.startsWith('http')) initBarGraph();
 
   // Restore active preset button
   removeActivePresets();
@@ -71,10 +65,13 @@ chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
   // -------------------------------
   eqToggle.addEventListener('change', () => {
     const isEnabled = eqToggle.checked;
-    chrome.storage.session.set({ [`eqEnabled_${tabId}`]: isEnabled });
-    chrome.runtime.sendMessage({ type: 'toggleChanged', enabled: isEnabled, tabId });
     setControlsEnabled(isEnabled);
-    if (isEnabled) sendEQSettings();
+
+    if (tab.url.startsWith('http')) {
+      chrome.runtime.sendMessage({ type: 'toggleChanged', enabled: isEnabled, tabId });
+      chrome.storage.session.set({ [`eqEnabled_${tabId}`]: isEnabled });
+      if (isEnabled) sendEQSettings();
+    } 
   });
 
   // -------------------------------
@@ -129,6 +126,45 @@ chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
     window.redrawEQGraph(eq);
   }
 });
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 // script.js
 

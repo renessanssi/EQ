@@ -63,6 +63,8 @@ export function setControlsEnabled(enabled) {
   dom.configuratorContainer.classList.toggle('disabled', !enabled);
   dom.equalizerContainer.classList.toggle('disabled', !enabled);
 
+  document.body.classList.toggle("inactive", !enabled);
+
   // Fade labels slightly when disabled
   [
     dom.bassValLabel,

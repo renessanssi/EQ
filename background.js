@@ -13,15 +13,10 @@ chrome.runtime.onInstalled.addListener(initBadge);
 chrome.runtime.onStartup.addListener(initBadge);
 
 // -------------------------------
-// Helper: Inject content.js & apply EQ
+// Helper: Apply EQ
 // -------------------------------
-async function injectAndApplyEQ(tabId) {
+async function applyEQ(tabId) {
   try {
-    await chrome.scripting.executeScript({
-      target: { tabId },
-      files: ['content.js'],
-    });
-
     const eqData = await chrome.storage.session.get(`eq_${tabId}`);
     const settings = eqData[`eq_${tabId}`] || { bass: 0, mid: 0, treble: 0, preamp: 0, master: 100 };
 
@@ -33,7 +28,7 @@ async function injectAndApplyEQ(tabId) {
       args: [settings],
     });
   } catch (err) {
-    console.error('Failed to inject/apply EQ:', err);
+    console.error('Failed to apply EQ:', err);
   }
 }
 
@@ -71,7 +66,7 @@ chrome.runtime.onMessage.addListener(async (message, sender) => {
     await chrome.storage.session.set({ [`eqEnabled_${tabId}`]: enabled });
 
     if (enabled) {
-      await injectAndApplyEQ(tabId);
+      await applyEQ(tabId);
     } else {
       await disableEQ(tabId);
     }
@@ -99,6 +94,6 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
 
   // 4️⃣ Inject/apply EQ only after page fully loads
   if (enabled && changeInfo.status === 'complete') {
-    await injectAndApplyEQ(tabId);
+    await applyEQ(tabId);
   }
 });
