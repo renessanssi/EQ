@@ -1,6 +1,6 @@
 import { dom } from './dom.js';
 import { loadTabSettings } from './state.js';
-import { setCurrentTab, sendSingleEQUpdate } from './messaging.js';
+import { setCurrentTab, sendSingleEQUpdate, sendEQSettings } from './messaging.js';
 import { updateValueLabels, setControlsEnabled } from './ui.js';
 import { animateToZero } from './animation.js';
 import { removeActivePresets, initPresetButtons } from './presets-handler.js';
@@ -17,15 +17,13 @@ chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
 
   const { [`hasRun_${tabId}`]: hasRun } = await chrome.storage.session.get(`hasRun_${tabId}`);
 
-  if (!hasRun) {
-    if (tab.url.startsWith('http')) {
-      await chrome.scripting.executeScript({target: { tabId: tab.id }, files: ['content.js']});
-      await chrome.storage.session.set({ [`hasRun_${tabId}`]: true });
-
-      initBarGraph();
-    } else {
-      dom.toggleContainer.classList.add('disabled');
-    }
+  if (hasRun) {
+    initBarGraph();
+  } else if (tab.url.startsWith('http')) {
+    await chrome.scripting.executeScript({target: { tabId: tab.id }, files: ['content.js']});
+    await chrome.storage.session.set({ [`hasRun_${tabId}`]: true });
+  } else {
+    dom.toggleContainer.classList.add('disabled');
   }
 
   // Load previously saved settings
@@ -65,11 +63,7 @@ chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
     dom.eqToggle.nextElementSibling.classList.remove('no-transition');
   });
 
-  if (enabled) {
-    for (const [key, value] of Object.entries(eq)) {
-      sendSingleEQUpdate(key, value);
-    }
-  }
+  if (eqToggle.checked) sendEQSettings();
 
   // -------------------------------
   // Toggle ON/OFF handler
@@ -79,9 +73,7 @@ chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
     setControlsEnabled(isEnabled);
     chrome.runtime.sendMessage({ type: 'toggleChanged', enabled: isEnabled, tabId });
     chrome.storage.session.set({ [`eqEnabled_${tabId}`]: isEnabled });
-    for (const [key, value] of Object.entries(eq)) {
-      sendSingleEQUpdate(key, value);
-    }
+    sendEQSettings();
   });
 
   // -------------------------------
@@ -129,9 +121,7 @@ chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
     });
 
     removeActivePresets();
-    for (const [key, value] of Object.entries(eq)) {
-      sendSingleEQUpdate(key, value);
-    }
+    sendEQSettings();
   });
 
   // Ensure graph redraw

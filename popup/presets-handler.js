@@ -2,7 +2,7 @@ import { presets } from './presets.js';
 import { dom } from './dom.js';
 import { animateSliderTo } from './animation.js';
 import { saveTabSettings } from './state.js';
-import { sendEQSettingsIfEnabled } from './messaging.js';
+import { sendEQSettings } from './messaging.js';
 import { updateValueLabels } from './ui.js';
 
 // -------------------------------
@@ -59,7 +59,7 @@ export function initPresetButtons(currentTabId) {
       button.classList.add('active');
 
       // Send updated EQ if enabled
-      sendEQSettingsIfEnabled();
+      sendEQSettings();
     });
   });
 }
