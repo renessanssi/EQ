@@ -54,8 +54,17 @@ chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
     }
   }
 
+  // Deny animation
+  dom.eqToggle.nextElementSibling.classList.add('no-transition');
+
   // Initialize toggle state
   dom.eqToggle.checked = enabled;
+
+  // Allow animation
+  requestAnimationFrame(() => {
+    dom.eqToggle.nextElementSibling.classList.remove('no-transition');
+  });
+
   if (enabled) {
     for (const [key, value] of Object.entries(eq)) {
       sendSingleEQUpdate(key, value);

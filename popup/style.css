@@ -134,9 +134,15 @@ body {
   box-shadow: 0 0 8px 2px rgba(255, 92, 92, 0.7);
 }
 
-.toggle:checked + .toggle-label:hover,
-.toggle:checked + .toggle-label:active {
-  box-shadow: 0 0 8px 2px rgba(62, 255, 127, 0.7);
+.toggle:checked + .toggle-label {
+  background-color: #3eff7f;
+  box-shadow: 0 0 8px 2px rgba(62, 255, 127, 0.7); /* persistent glow */
+}
+
+/* Add this to your CSS */
+.toggle-label.no-transition,
+.toggle-label.no-transition::after {
+  transition: none !important;
 }
 
 /* ------------------------------- */
