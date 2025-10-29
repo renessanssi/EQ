@@ -56,7 +56,6 @@ export function initPresetButtons(currentTabId) {
       // Highlight active preset button
       removeActivePresets();
       button.classList.add('active');
-
     });
   });
 }

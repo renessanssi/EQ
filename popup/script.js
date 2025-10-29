@@ -2,7 +2,6 @@ import { dom } from './dom.js';
 import { loadTabSettings } from './state.js';
 import { setCurrentTab, sendSingleEQUpdate, sendEQSettings } from './messaging.js';
 import { updateValueLabels, setControlsEnabled } from './ui.js';
-import { animateToZero } from './animation.js';
 import { removeActivePresets, initPresetButtons } from './presets-handler.js';
 import { initEQGraph, initBarGraph } from './visualizer.js';
 
@@ -52,15 +51,8 @@ chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
   initEQGraph(dom);
 
   // Restore active preset button
-  removeActivePresets();
-  if (activePreset) {
-    if (activePreset === 'custom') {
-      dom.customBtn.classList.add('active');
-    } else {
-      const btn = dom.presetButtons.find(b => b.getAttribute('data-preset') === activePreset);
-      if (btn) btn.classList.add('active');
-    }
-  }
+  const btn = dom.presetButtons.find(b => b.getAttribute('data-preset') === activePreset);
+  if (btn) btn.classList.add('active');
 
   // Deny animation
   dom.eqToggle.nextElementSibling.classList.add('no-transition');
@@ -159,33 +151,6 @@ chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
 
     contextMenu.style.display = 'none';
     removeActivePresets();
-  });
-
-  // -------------------------------
-  // Reset button
-  // -------------------------------
-  dom.resetBtn.addEventListener('click', async () => {
-    [dom.bassControl, dom.midControl, dom.trebleControl].forEach(animateToZero);
-    updateValueLabels({ bass: 0, mid: 0, treble: 0 });
-
-    // Merge with existing EQ (keep preamp/master)
-    const stored = await chrome.storage.session.get(`eq_${tabId}`);
-    const currentEQ = stored[`eq_${tabId}`] || {};
-
-    const newEQ = {
-      ...currentEQ,
-      bass: 0,
-      mid: 0,
-      treble: 0,
-    };
-
-    await chrome.storage.session.set({
-      [`eq_${tabId}`]: newEQ,
-      [`activePreset_${tabId}`]: null,
-    });
-
-    removeActivePresets();
-    sendEQSettings();
   });
 
   // -------------------------------

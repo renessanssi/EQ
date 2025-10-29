@@ -13,6 +13,7 @@ export function animateSliderTo(slider, target, duration = 150) {
   const steps = 15;
   const stepValue = (target - slider.value) / steps;
   let count = 0;
+  let finished = false;
 
   const interval = setInterval(() => {
     slider.value = parseFloat(slider.value) + stepValue;
@@ -22,14 +23,20 @@ export function animateSliderTo(slider, target, duration = 150) {
       slider.value = target;
       slider.dispatchEvent(new Event('input'));
       clearInterval(interval);
+      finished = true;
     }
   }, duration / steps);
-}
 
-/**
- * Animates a slider smoothly back to zero.
- * @param {HTMLInputElement} slider
- */
-export function animateToZero(slider) {
-  animateSliderTo(slider, 0);
+  // Handle popup closing or backgrounding
+  const stopAnimation = () => {
+    if (!finished) {
+      slider.value = target;
+      slider.dispatchEvent(new Event('input'));
+      clearInterval(interval);
+    }
+  };
+
+  // Stop if the window is hidden or unloaded
+  document.addEventListener('visibilitychange', stopAnimation, { once: true });
+  window.addEventListener('unload', stopAnimation, { once: true });
 }

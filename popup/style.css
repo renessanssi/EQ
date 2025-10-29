@@ -360,19 +360,19 @@ input[type="range"]:disabled {
 /* ------------------------------- */
 /* RESET BUTTON                    */
 /* ------------------------------- */
-.reset {
+#resetBtn {
   background-color: #5c1a1a;
   color: #d0d0d0;
   border: 1px solid #7a2a2a;
 }
 
-.reset:hover:not(:disabled) {
+#resetBtn:hover:not(:disabled) {
   background-color: #6e2222;
   color: #e0e0e0;
   border-color: #903030;
 }
 
-.reset:active:not(:disabled) {
+#resetBtn:active:not(:disabled) {
   background-color: #a33b3b;
   color: #000;
 }
