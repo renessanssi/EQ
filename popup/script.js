@@ -39,8 +39,8 @@ chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
   const { eq, enabled, activePreset } = await loadTabSettings(tabId);
 
   // Set initial slider positions
-  dom.bassControl.value = eq.bass;
-  dom.midControl.value = eq.mid;
+  dom.bassControl.value   = eq.bass;
+  dom.midControl.value    = eq.mid;
   dom.trebleControl.value = eq.treble;
   dom.preampControl.value = eq.preamp;
   dom.masterControl.value = eq.master;
@@ -51,8 +51,7 @@ chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
   initEQGraph(dom);
 
   // Restore active preset button
-  const btn = dom.presetButtons.find(b => b.getAttribute('data-preset') === activePreset);
-  if (btn) btn.classList.add('active');
+  dom.presetButtons.find(b => b.getAttribute('data-preset') === activePreset).classList.add('active');
 
   // Deny animation
   dom.eqToggle.nextElementSibling.classList.add('no-transition');

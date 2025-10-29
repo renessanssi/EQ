@@ -30,11 +30,12 @@ export async function loadTabSettings(tabId) {
 
   // Provide default EQ values if none saved yet
   const defaultEQ = { bass: 0, mid: 0, treble: 0, preamp: 0, master: 100 };
+  const defaultactivePreset = "boostReset";
 
   return {
     eq: data[`eq_${tabId}`] || defaultEQ,
     enabled: data[`eqEnabled_${tabId}`] || false,
-    activePreset: data[`activePreset_${tabId}`] || null,
+    activePreset: data[`activePreset_${tabId}`] || defaultactivePreset,
   };
 }
 

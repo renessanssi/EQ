@@ -147,9 +147,10 @@ export function initBarGraph() {
   const ctx = canvas.getContext('2d');
   let frequencyData = [];
   let stop = false;
+  let paused = document.hidden;
 
   function drawBars() {
-    if (stop) return;
+    if (stop || paused) return;
 
     const w = (canvas.width = canvas.clientWidth * devicePixelRatio);
     const h = (canvas.height = canvas.clientHeight * devicePixelRatio);
@@ -174,7 +175,7 @@ export function initBarGraph() {
   }
 
   function updateData() {
-    if (stop) return;
+    if (stop || paused) return;
 
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
       if (!tabs?.[0]?.id) return;
@@ -188,10 +189,26 @@ export function initBarGraph() {
     requestAnimationFrame(updateData);
   }
 
-  drawBars();
-  updateData();
-  
+  // -------------------------------
+  // Visibility handling
+  // -------------------------------
+  document.addEventListener('visibilitychange', () => {
+    paused = document.hidden;
+    if (!paused) {
+      // Resume only if not stopped
+      requestAnimationFrame(drawBars);
+      requestAnimationFrame(updateData);
+    }
+  });
+
+  // -------------------------------
+  // Cleanup on popup close
+  // -------------------------------
   window.addEventListener("beforeunload", () => {
     stop = true;
   });
+
+  // Start initial loops
+  requestAnimationFrame(drawBars);
+  requestAnimationFrame(updateData);
 }
