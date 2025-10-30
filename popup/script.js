@@ -5,7 +5,6 @@ import { updateValueLabels, setControlsEnabled } from './ui.js';
 import { removeActivePresets, initPresetButtons } from './presets-handler.js';
 import { initEQGraph, initBarGraph } from './visualizer.js';
 
-// -------------------------------
 // Helper: merge-save EQ value
 // -------------------------------
 async function saveEQValue(tabId, key, value) {
@@ -52,13 +51,12 @@ chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
 
   // Restore active preset button
   dom.presetButtons.find(b => b.getAttribute('data-preset') === activePreset)?.classList.add('active');
-
   // Deny animation
   dom.eqToggle.nextElementSibling.classList.add('no-transition');
-
-  // Initialize toggle state
+  // Set toggle
   dom.eqToggle.checked = enabled;
-
+  // Pass body
+  document.body.classList.remove('loading');
   // Allow animation
   requestAnimationFrame(() => {
     dom.eqToggle.nextElementSibling.classList.remove('no-transition');

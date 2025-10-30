@@ -29,6 +29,8 @@ export const dom = {
 
   // --- Containers ---
   visualizerContainer: document.querySelector('.visualizer-container'),
+  modeContainer: document.querySelector('.mode-container'),
+  configuratorContainer: document.querySelector('.configurator-container'),
   equalizerContainer: document.querySelector('.equalizer-container'),
 
   // --- Toggle ---

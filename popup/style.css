@@ -26,6 +26,10 @@ body {
   background-color: var(--background-color);
 }
 
+body.loading {
+  visibility: hidden;
+}
+
 /* ------------------------------- */
 /* BORDERS                         */
 /* ------------------------------- */
@@ -172,7 +176,7 @@ body {
 /* The visible selected item */
 .mode-container .selected,
 .configurator-container .selected {
-  padding: 6px 8px;
+  padding: 4px 8px;
   position: relative;
 }
 
@@ -221,7 +225,7 @@ body {
 /* Option items */
 .mode-container .options div,
 .configurator-container .options div {
-  padding: 6px 8px;
+  padding: 4px 8px;
   color: var(--slider-accent);
   transition: background 0.2s ease, color 0.2s ease;
 }

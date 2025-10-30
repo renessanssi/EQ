@@ -59,7 +59,8 @@ export function setControlsEnabled(enabled) {
   });
 
   dom.visualizerContainer.classList.toggle('disabled', !enabled);
-  
+  dom.modeContainer.classList.toggle('disabled', !enabled);
+  dom.configuratorContainer.classList.toggle('disabled', !enabled);
   dom.equalizerContainer.classList.toggle('disabled', !enabled);
 
   document.body.classList.toggle("inactive", !enabled);
