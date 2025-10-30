@@ -150,28 +150,92 @@ body {
 /* ------------------------------- */
 .mode-container,
 .configurator-container {
-  flex: 1;
-  max-width: 190px;
-  font-family: inherit;
-  font-size: 13px;
-  color: var(--text-color);
+  position: relative;
+  display: inline-block;
+  width: 180px;
   background-color: var(--button-bg);
-  border: 1px solid #333;
-  border-radius: 6px;
+  border: 2px solid var(--border-color);
+  border-radius: 8px;
+  color: var(--slider-accent);
+  font-size: 14px;
   cursor: pointer;
-  text-align: center;
-  outline: none;
-  padding: 1px 0px;
+  transition: 0.2s ease;
+  user-select: none;
 }
 
 .mode-container:hover,
 .configurator-container:hover {
   background-color: var(--button-hover);
-  border-color: #444;
+  border-color: var(--slider-accent);
 }
 
-.configurator-container {
-  direction: rtl;
+/* The visible selected item */
+.mode-container .selected,
+.configurator-container .selected {
+  padding: 6px 8px;
+  position: relative;
+}
+
+/* Dropdown arrow indicator */
+.mode-container .selected::after,
+.configurator-container .selected::after {
+  content: "▼";
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 11px;
+  color: var(--slider-accent);
+  transition: transform 0.2s ease;
+}
+
+/* Rotate arrow when open */
+.mode-container.open .selected::after,
+.configurator-container.open .selected::after {
+  transform: translateY(-50%) rotate(180deg);
+}
+
+/* Dropdown options list */
+.mode-container .options,
+.configurator-container .options {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  width: 100%;
+  background-color: var(--button-bg);
+  border: 2px solid var(--border-color);
+  border-radius: 8px;
+  overflow: hidden;
+  z-index: 10;
+  display: none;
+  flex-direction: column;
+}
+
+/* When dropdown is open */
+.mode-container.open .options,
+.configurator-container.open .options {
+  display: flex;
+  animation: fadeIn 0.15s ease;
+}
+
+/* Option items */
+.mode-container .options div,
+.configurator-container .options div {
+  padding: 6px 8px;
+  color: var(--slider-accent);
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.mode-container .options div:hover,
+.configurator-container .options div:hover {
+  background-color: var(--slider-accent);
+  color: var(--button-active-color);
+}
+
+/* Small fade animation */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-5px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 /* ------------------------------- */

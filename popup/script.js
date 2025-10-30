@@ -51,7 +51,7 @@ chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
   initEQGraph(dom);
 
   // Restore active preset button
-  dom.presetButtons.find(b => b.getAttribute('data-preset') === activePreset).classList.add('active');
+  dom.presetButtons.find(b => b.getAttribute('data-preset') === activePreset)?.classList.add('active');
 
   // Deny animation
   dom.eqToggle.nextElementSibling.classList.add('no-transition');
@@ -158,4 +158,29 @@ chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
   if (window.redrawEQGraph) {
     window.redrawEQGraph(eq);
   }
+});
+
+// Custom dropdown logic
+document.querySelectorAll('.mode-container, .configurator-container').forEach(container => {
+  const selected = container.querySelector('.selected');
+  const options = container.querySelector('.options');
+
+  selected.addEventListener('click', () => {
+    container.classList.toggle('open');
+  });
+
+  options.querySelectorAll('div').forEach(option => {
+    option.addEventListener('click', () => {
+      selected.textContent = option.textContent;
+      selected.dataset.value = option.dataset.value;
+      container.classList.remove('open');
+    });
+  });
+});
+
+// Close all dropdowns when clicking outside
+document.addEventListener('click', (e) => {
+  document.querySelectorAll('.mode-container.open, .configurator-container.open').forEach(openContainer => {
+    if (!openContainer.contains(e.target)) openContainer.classList.remove('open');
+  });
 });

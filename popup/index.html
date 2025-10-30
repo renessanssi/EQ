@@ -23,9 +23,12 @@
   <!-- Control Panel -->
   <div class="control-container">
     <!-- Left Selection Box -->
-    <select class="mode-container">
-      <option value="bands">3-Band Equalizer</option>
-    </select>
+    <div class="mode-container" id="modeSelect">
+      <div class="selected">3-Band Equalizer</div>
+      <div class="options">
+        <div data-value="bands">3-Band Equalizer</div>
+      </div>
+    </div>
 
     <!-- Toggle -->
     <div class="toggle-container">
@@ -34,11 +37,14 @@
     </div>
 
     <!-- Right Selection Box -->
-    <select class="configurator-container">
-      <option value="gain">Gain (dB)</option>
-      <option value="frequency">Frequency (Hz)</option>
-      <option value="slope">Slope (Q)</option>
-    </select>
+    <div class="configurator-container" id="configSelect">
+      <div class="selected">Gain (dB)</div>
+      <div class="options">
+        <div data-value="gain">Gain (dB)</div>
+        <div data-value="frequency">Frequency (Hz)</div>
+        <div data-value="q">X (Q)</div>
+      </div>
+    </div>
   </div>
   
   <!-- Equalizer -->
