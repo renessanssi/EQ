@@ -105,7 +105,6 @@ body.loading {
   position: relative;
   cursor: pointer;
   background-color: #ff4a4a;
-  top: 4px;
   border-radius: 12px;
   border: 2px solid #333;
   transition: 0.2s ease;
@@ -158,10 +157,9 @@ body.loading {
   display: inline-block;
   width: 180px;
   background-color: var(--button-bg);
-  border: 2px solid var(--border-color);
+  border: 1px solid #444;
   border-radius: 8px;
-  color: var(--slider-accent);
-  font-size: 14px;
+  font-size: 13px;
   cursor: pointer;
   transition: 0.2s ease;
   user-select: none;
@@ -170,7 +168,6 @@ body.loading {
 .mode-container:hover,
 .configurator-container:hover {
   background-color: var(--button-hover);
-  border-color: var(--slider-accent);
 }
 
 /* The visible selected item */
@@ -188,7 +185,7 @@ body.loading {
   right: 10px;
   top: 50%;
   transform: translateY(-50%);
-  font-size: 11px;
+  font-size: 10px;
   color: var(--slider-accent);
   transition: transform 0.2s ease;
 }
@@ -206,8 +203,8 @@ body.loading {
   top: calc(100% + 4px);
   left: 0;
   width: 100%;
+  border: 1px solid #444;
   background-color: var(--button-bg);
-  border: 2px solid var(--border-color);
   border-radius: 8px;
   overflow: hidden;
   z-index: 10;
@@ -226,20 +223,13 @@ body.loading {
 .mode-container .options div,
 .configurator-container .options div {
   padding: 4px 8px;
-  color: var(--slider-accent);
   transition: background 0.2s ease, color 0.2s ease;
 }
 
 .mode-container .options div:hover,
 .configurator-container .options div:hover {
-  background-color: var(--slider-accent);
   color: var(--button-active-color);
-}
-
-/* Small fade animation */
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(-5px); }
-  to { opacity: 1; transform: translateY(0); }
+  color: var(--slider-accent);
 }
 
 /* ------------------------------- */
@@ -250,6 +240,7 @@ body.loading {
   justify-content: space-between;
   align-items: flex-end;
   width: 90%;
+  margin-top: 11px;
 }
 
 .band-container {
@@ -276,7 +267,7 @@ body.loading {
   align-items: center;
 }
 
-label {
+.slider-container label {
   position: absolute;
   top: -24px;
   width: max-content;
@@ -286,7 +277,7 @@ label {
   color: var(--text-color);
 }
 
-span {
+.slider-container span {
   position: absolute;
   bottom: -24px;
   font-size: 13px;
@@ -395,14 +386,6 @@ button:active:not(:disabled) {
   color: var(--button-active-color);
 }
 
-button:disabled,
-.preset:disabled,
-input[type="range"]:disabled {
-  opacity: 0.5;
-  pointer-events: none;
-  cursor: not-allowed;
-}
-
 /* ------------------------------- */
 /* PRESETS                         */
 /* ------------------------------- */
@@ -448,6 +431,14 @@ input[type="range"]:disabled {
 /* ------------------------------- */
 /* TOGGLED OFF                     */
 /* ------------------------------- */
+button:disabled,
+.preset:disabled,
+input[type="range"]:disabled {
+  opacity: 0.5;
+  pointer-events: none;
+  cursor: not-allowed;
+}
+
 body.inactive {
   border-color: rgba(255, 239, 199, 0.4);
 }
@@ -486,24 +477,4 @@ body.inactive {
 
 .context-menu button:hover {
   background-color: #2b2b2b;
-}
-
-/* Normal slider look */
-input[type="range"] {
-  cursor: pointer;
-}
-
-/* Disabled (but still right-clickable) */
-input[type="range"].disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-  pointer-events: none; /* block all pointer interactions */
-}
-
-/* Allow right-clicks specifically */
-input[type="range"].disabled::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  pointer-events: auto; /* re-enable pointer events */
 }

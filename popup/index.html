@@ -52,7 +52,7 @@
     <!-- Preamp -->
     <div class="preamp-container">
       <div class="slider-container">
-        <label for="preamp">PREAMP</label>
+        <label id="preampLabel" for="preamp">PREAMP</label>
         <input type="range" id="preamp" min="-12" max="12" value="0" step="1" />
         <span id="preampVal">0</span>
       </div>
@@ -76,11 +76,10 @@
         <span id="trebleVal">0</span>
       </div>
     </div>
-
     <!-- Master -->
     <div class="master-container">
       <div class="slider-container">
-        <label for="master">MASTER</label>
+        <label id="masterLabel" for="master">MASTER</label>
         <input type="range" id="master" min="0" max="100" value="100" step="1" />
         <span id="masterVal">100</span>
       </div>

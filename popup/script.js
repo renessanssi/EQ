@@ -30,6 +30,7 @@ chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
   } else if (tab.url.startsWith('http')) {
     await chrome.scripting.executeScript({ target: { tabId: tab.id }, files: ['content.js'] });
     await chrome.storage.session.set({ [`hasRun_${tabId}`]: true });
+    initBarGraph(); // ✅ run after injecting content script
   } else {
     dom.toggleContainer.classList.add('disabled');
   }
@@ -145,9 +146,24 @@ chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
     updateValueLabels({ [id]: 0 });
     sendSingleEQUpdate(id, 0);
     await saveEQValue(tabId, id, 0);
+    
 
     contextMenu.style.display = 'none';
+
+    const allZero = 
+    Number(dom.bassControl.value)   === 0  && 
+    Number(dom.midControl.value)    === 0  && 
+    Number(dom.trebleControl.value) === 0;
+    
     removeActivePresets();
+
+    if (allZero) {
+      chrome.storage.session.set({ [`activePreset_${tabId}`]: 'reset' });
+    } else
+    {
+      dom.customBtn.classList.add('active');
+      chrome.storage.session.set({ [`activePreset_${tabId}`]: 'custom' });
+    }
   });
 
   // -------------------------------
