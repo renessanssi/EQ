@@ -30,8 +30,9 @@ chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
   } else if (tab.url.startsWith('http')) {
     await chrome.scripting.executeScript({ target: { tabId: tab.id }, files: ['content.js'] });
     await chrome.storage.session.set({ [`hasRun_${tabId}`]: true });
-    initBarGraph(); // ✅ run after injecting content script
-  } else {
+
+    initBarGraph();
+  } else if (!tab.url.startsWith('http')) {
     dom.toggleContainer.classList.add('disabled');
   }
 

@@ -443,13 +443,17 @@ body.inactive {
   border-color: rgba(255, 239, 199, 0.4);
 }
 
-.visualizer-container.disabled, span.disabled {
+.visualizer-container.disabled {
   opacity: 0.4;
 }
 
 .toggle-container.disabled, .mode-container.disabled, .configurator-container.disabled {
   opacity: 0.4;
   pointer-events: none;
+}
+
+.slider-container label.disabled, .slider-container span.disabled {
+  opacity: 0.4;
 }
 
 .context-menu {

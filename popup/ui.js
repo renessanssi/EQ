@@ -51,37 +51,15 @@ export function updateValueLabels(values) {
  * @param {boolean} enabled
  */
 export function setControlsEnabled(enabled) {
-  // Sliders
-  [
-    dom.bassControl,
-    dom.midControl,
-    dom.trebleControl,
-    dom.preampControl,
-    dom.masterControl,
-  ].forEach((control) => {
-    control.disabled = !enabled;
+  // Enable/disable sliders and buttons
+  [...dom.sliders, ...dom.buttons].forEach(el => {
+    el.disabled = !enabled;
   });
 
-  // Buttons (presets, reset, custom)
-  [dom.resetBtn, dom.customBtn, ...dom.presetButtons].forEach((btn) => {
-    btn.disabled = !enabled;
-  });
-
-  dom.visualizerContainer.classList.toggle('disabled', !enabled);
-  dom.modeContainer.classList.toggle('disabled', !enabled);
-  dom.configuratorContainer.classList.toggle('disabled', !enabled);
-  dom.equalizerContainer.classList.toggle('disabled', !enabled);
-
-  document.body.classList.toggle("inactive", !enabled);
-
-  // Fade labels slightly when disabled
-  [
-    dom.bassValLabel,
-    dom.midValLabel,
-    dom.trebleValLabel,
-    dom.preampValLabel,
-    dom.masterValLabel,
-  ].forEach((label) => {
-    label.classList.toggle('disabled', !enabled);
-  });
+  // Toggle visual classes
+  dom.containers.forEach(c => c.classList.toggle('disabled', !enabled));
+  dom.labels.forEach(l => l.classList.toggle('disabled', !enabled));
+  dom.texts.forEach(l => l.classList.toggle('disabled', !enabled));
+  // Body state
+  document.body.classList.toggle('inactive', !enabled);
 }
