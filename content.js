@@ -86,17 +86,18 @@
     const s = e.detail;
     if (!s) return;
 
-    if (s.preamp !== undefined)
-      preamp.gain.value = Math.pow(10, s.preamp / 20);
-    if (s.bass !== undefined)
-      filters.bass.gain.value = s.bass;
-    if (s.mid !== undefined)
-      filters.mid.gain.value = s.mid;
-    if (s.treble !== undefined)
-      filters.treble.gain.value = s.treble;
-    if (s.master !== undefined)
-      master.gain.value = s.master / 100;
+    if (s.bassFreq !== undefined) filters.bass.frequency.value = s.bassFreq;
+    if (s.midFreq !== undefined) filters.mid.frequency.value = s.midFreq;
+    if (s.trebleFreq !== undefined) filters.treble.frequency.value = s.trebleFreq;
+
+    // existing gain updates
+    if (s.preamp !== undefined) preamp.gain.value = Math.pow(10, s.preamp / 20);
+    if (s.bass !== undefined) filters.bass.gain.value = s.bass;
+    if (s.mid !== undefined) filters.mid.gain.value = s.mid;
+    if (s.treble !== undefined) filters.treble.gain.value = s.treble;
+    if (s.master !== undefined) master.gain.value = s.master / 100;
   });
+
 
 
   window.addEventListener('disableEqualizer', () => {

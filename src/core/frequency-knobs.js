@@ -1,3 +1,4 @@
+import { sendSingleEQUpdate } from './messaging.js'; // import the messaging function
 import { clamp, percentToFreq, freqToPercent, DEFAULT_FREQUENCIES } from './math-utils.js';
 import { saveKnobFrequency } from './storage-helpers.js';
 import { initEQGraph } from './visualizer.js';
@@ -64,7 +65,6 @@ export async function initKnobs(tabId) {
   const GAP_PERCENT = 5;
 
   function pushKnobs(index, percent, direction) {
-    // direction: 1 = right, -1 = left
     const min = index === 0 ? 0 : parseFloat(knobs[index - 1].style.left) + GAP_PERCENT;
     const max = index === knobs.length - 1 ? 100 : parseFloat(knobs[index + 1].style.left) - GAP_PERCENT;
 
@@ -81,15 +81,21 @@ export async function initKnobs(tabId) {
     if (index === 1) dom.midTextLabel.textContent = freqText;
     if (index === 2) dom.trebleTextLabel.textContent = freqText;
 
+    // Save in session storage
     saveKnobFrequency(
       tabId,
       index === 0 ? `freq_bass_${tabId}` : index === 1 ? `freq_mid_${tabId}` : `freq_treble_${tabId}`,
       freq
     );
 
+    // Update visual EQ graph
     eqGraph.updateEQFrequencies({
       [index === 0 ? 'bass' : index === 1 ? 'mid' : 'treble']: freq,
     });
+
+    // ✅ Send the frequency to content.js
+    const type = index === 0 ? 'bassFreq' : index === 1 ? 'midFreq' : 'trebleFreq';
+    sendSingleEQUpdate(type, freq); // dispatch to content script
 
     // Push next knob if hitting limit
     if (direction === 1 && index < knobs.length - 1 && clamped >= max) {
