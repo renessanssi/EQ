@@ -5,7 +5,9 @@ import { updateValueLabels, setControlsEnabled } from './ui.js';
 import { removeActivePresets, initPresetButtons } from './presets-handler.js';
 import { initEQGraph, initBarGraph } from './visualizer.js';
 
+// -------------------------------
 // Helper: merge-save EQ value
+// -------------------------------
 async function saveEQValue(tabId, key, value) {
   const stored = await chrome.storage.session.get(`eq_${tabId}`);
   const currentEQ = stored[`eq_${tabId}`] || {};
@@ -31,8 +33,7 @@ const maxFreq = 20000;
 function percentToFreq(percent) {
   const logMin = Math.log10(minFreq);
   const logMax = Math.log10(maxFreq);
-  const freq = Math.pow(10, logMin + (percent / 100) * (logMax - logMin));
-  return Math.round(freq);
+  return Math.round(Math.pow(10, logMin + (percent / 100) * (logMax - logMin)));
 }
 
 function freqToPercent(freq) {
@@ -96,18 +97,18 @@ chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
   updateValueLabels(eq);
   setControlsEnabled(enabled);
   initPresetButtons(tabId);
-  initEQGraph(dom);
+
+  // ✅ initialize EQ Graph and capture handles
+  const eqGraph = initEQGraph(dom); // returns { redrawEQGraph, updateEQFrequencies }
 
   // Restore active preset button
   dom.presetButtons.find(b => b.getAttribute('data-preset') === activePreset)?.classList.add('active');
 
-  // Deny animation during setup
+  // Disable transition during setup
   dom.eqToggle.nextElementSibling.classList.add('no-transition');
   dom.eqToggle.checked = enabled;
   document.body.classList.remove('loading');
-  requestAnimationFrame(() => {
-    dom.eqToggle.nextElementSibling.classList.remove('no-transition');
-  });
+  requestAnimationFrame(() => dom.eqToggle.nextElementSibling.classList.remove('no-transition'));
 
   if (dom.eqToggle.checked) sendEQSettings();
 
@@ -133,6 +134,13 @@ chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
       updateValueLabels({ [id]: value });
       sendSingleEQUpdate(id, value);
       await saveEQValue(tabId, id, value);
+
+      // 🔥 Update live EQ curve visually
+      eqGraph.redrawEQGraph({
+        bass: Number(dom.bassControl.value),
+        mid: Number(dom.midControl.value),
+        treble: Number(dom.trebleControl.value)
+      });
 
       if (event.isTrusted) {
         removeActivePresets();
@@ -190,7 +198,6 @@ chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
     updateValueLabels({ [id]: 0 });
     sendSingleEQUpdate(id, 0);
     await saveEQValue(tabId, id, 0);
-
     contextMenu.style.display = 'none';
 
     const allZero =
@@ -206,9 +213,17 @@ chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
       dom.customBtn.classList.add('active');
       chrome.storage.session.set({ [`activePreset_${tabId}`]: 'custom' });
     }
+
+    // 🔥 Update EQ graph after reset
+    eqGraph.redrawEQGraph({
+      bass: Number(dom.bassControl.value),
+      mid: Number(dom.midControl.value),
+      treble: Number(dom.trebleControl.value)
+    });
   });
 
-  if (window.redrawEQGraph) window.redrawEQGraph(eq);
+  // 🔥 Draw graph with current EQ values
+  eqGraph.redrawEQGraph(eq);
 
   // -------------------------------
   // Dropdown logic with persistence
@@ -242,7 +257,6 @@ chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
         selected.textContent = option.textContent;
         selected.dataset.value = value;
         configContainer.classList.remove('open');
-
         showConfigOption(value);
         await saveDropdownOption(tabId, value);
       });
@@ -250,29 +264,22 @@ chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
   }
 
   // -------------------------------
-  // Frequency knobs initialization
+  // Frequency knobs (live graph update)
   // -------------------------------
   const knobs = [
     document.getElementById('freqKnob1'),
     document.getElementById('freqKnob2'),
     document.getElementById('freqKnob3')
   ];
-
   const labels = [
     document.getElementById('freqLabel1'),
     document.getElementById('freqLabel2'),
     document.getElementById('freqLabel3')
   ];
-
   const slider = document.querySelector('.freq-slider');
   let activeKnob = null;
 
-  const initialFreqs = [
-    currentFreqs.bass,
-    currentFreqs.mid,
-    currentFreqs.treble
-  ];
-
+  const initialFreqs = [currentFreqs.bass, currentFreqs.mid, currentFreqs.treble];
   initialFreqs.forEach((freq, i) => {
     const percent = freqToPercent(freq);
     const freqText = freq >= 1000 ? (freq / 1000).toFixed(1) + ' kHz' : freq + ' Hz';
@@ -281,14 +288,10 @@ chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
     labels[i].textContent = freqText;
   });
 
-  // Sync with gain section labels
   dom.bassTextLabel.textContent = labels[0].textContent;
   dom.midTextLabel.textContent = labels[1].textContent;
   dom.trebleTextLabel.textContent = labels[2].textContent;
 
-  // -------------------------------
-  // Dragging logic + save on release
-  // -------------------------------
   knobs.forEach((knob, i) => {
     knob.addEventListener('mousedown', (e) => {
       e.preventDefault();
@@ -330,20 +333,13 @@ chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
       case 2: dom.trebleTextLabel.textContent = freqText; break;
     }
 
-    // Save live value
     saveKnobFrequency(activeKnob, freq);
 
-
     // 🔥 Live update EQ graph frequency response
-    if (window.updateEQFrequencies) {
-      const newFreqs = {};
-      if (activeKnob === 0) newFreqs.bass = freq;
-      if (activeKnob === 1) newFreqs.mid = freq;
-      if (activeKnob === 2) newFreqs.treble = freq;
-      window.updateEQFrequencies(newFreqs);
-    }
+    eqGraph.updateEQFrequencies({
+      [activeKnob === 0 ? 'bass' : activeKnob === 1 ? 'mid' : 'treble']: freq
+    });
   }
-
 
   function onMouseUp() {
     activeKnob = null;

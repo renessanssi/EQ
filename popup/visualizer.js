@@ -142,20 +142,22 @@ export function initEQGraph(dom) {
 
   draw();
 
-  // Public updaters
-  window.redrawEQGraph = (settings) => {
+  // --- Return public updater handles ---
+  function redrawEQGraph(settings) {
     filters.bass.gain.value = settings.bass;
     filters.mid.gain.value = settings.mid;
     filters.treble.gain.value = settings.treble;
-  };
+  }
 
-  // 🎯 NEW: Live update frequencies (called from script.js)
-  window.updateEQFrequencies = (freqs) => {
+  function updateEQFrequencies(freqs) {
     if (freqs.bass)   filters.bass.frequency.value = freqs.bass;
     if (freqs.mid)    filters.mid.frequency.value = freqs.mid;
     if (freqs.treble) filters.treble.frequency.value = freqs.treble;
-  };
+  }
+
+  return { redrawEQGraph, updateEQFrequencies };
 }
+
 
 // -------------------------------
 // Bar Graph Visualizer (separate)
