@@ -243,7 +243,7 @@ body.loading {
   margin-top: 11px;
 }
 
-.band-container {
+.gain-container {
   display: flex;
   flex-direction: row;
   align-items: flex-end;
@@ -481,4 +481,60 @@ body.inactive {
 
 .context-menu button:hover {
   background-color: #2b2b2b;
+}
+
+/* ------------------------------- */
+/* FREQUENCY SLIDER (3-KNOB)       */
+/* ------------------------------- */
+.frequency-container {
+  width: 90%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform: translateY(-70px);
+}
+
+.freq-slider {
+  position: relative;
+  width: 80%;
+  height: 2px;
+  background: #1e1e1e;
+  border: 1px solid #2a2a2a;
+  border-radius: 4px;
+  box-shadow: inset 0 0 4px rgba(0, 0, 0, 0.6);
+}
+
+.freq-slider .knob {
+  position: absolute;
+  top: 50%;
+  width: 18px;
+  height: 18px;
+  background: radial-gradient(circle at center, #000 0%, #111 30%, var(--slider-accent) 40%);
+  border: 1px solid #000;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.freq-slider .knob:hover {
+  transform: translate(-50%, -50%) scale(1.1);
+  box-shadow: 0 0 6px var(--slider-accent);
+}
+
+.freq-values {
+  margin-top: 10px;
+  font-size: 13px;
+  color: var(--slider-accent);
+  letter-spacing: 1px;
+  text-align: center;
+}
+
+.freq-label {
+  position: absolute;
+  top: -25px;
+  transform: translateX(-50%);
+  font-size: 12px;
+  color: #fff;
+  white-space: nowrap;
 }

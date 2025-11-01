@@ -59,21 +59,40 @@
     </div>
 
     <!-- Bands -->
-    <div class="band-container">
+    <div class="gain-container">
       <div class="slider-container">
-        <label id="bassText" for="bass">60 Hz</label>
+        <label id="bassText" for="bass"></label>
         <input type="range" id="bass" min="-30" max="30" value="0" step="1" />
         <span id="bassVal">0</span>
       </div>
       <div class="slider-container">
-        <label id="midText" for="mid">1 kHz</label>
+        <label id="midText" for="mid"></label>
         <input type="range" id="mid" min="-30" max="30" value="0" step="1" />
         <span id="midVal">0</span>
       </div>
       <div class="slider-container">
-        <label id="trebleText" for="treble">12 kHz</label>
+        <label id="trebleText" for="treble"></label>
         <input type="range" id="treble" min="-30" max="30" value="0" step="1" />
         <span id="trebleVal">0</span>
+      </div>
+    </div>
+    <div class="frequency-container" style="display: none;">
+      <div class="freq-slider">
+        <div class="freq-label" id="freqLabel1"></div>
+        <div class="freq-label" id="freqLabel2"></div>
+        <div class="freq-label" id="freqLabel3"></div>
+
+        <div class="knob" id="freqKnob1"></div>
+        <div class="knob" id="freqKnob2"></div>
+        <div class="knob" id="freqKnob3"></div>
+      </div>
+    </div>
+
+    <div class="q-container" style="display: none;">
+      <div class="slider-container">
+        <label>Q</label>
+        <input type="range"min="-30" max="30" value="0" step="1" />
+        <span>0</span>
       </div>
     </div>
     <!-- Master -->

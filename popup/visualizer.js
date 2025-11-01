@@ -14,12 +14,28 @@ export function initEQGraph(dom) {
   };
 
   filters.bass.type = 'lowshelf';
-  filters.bass.frequency.value = 60;
   filters.mid.type = 'peaking';
-  filters.mid.frequency.value = 1000;
-  filters.mid.Q.value = 1;
   filters.treble.type = 'highshelf';
-  filters.treble.frequency.value = 12000;
+
+  // Default fallback frequencies
+  const DEFAULT_FREQS = { bass: 60, mid: 1000, treble: 12000 };
+
+  // Restore saved frequencies per tab
+  chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
+    const tab = tabs[0];
+    if (!tab?.id) return;
+
+    const tabId = tab.id;
+    const stored = await chrome.storage.session.get([
+      `freq_bass_${tabId}`,
+      `freq_mid_${tabId}`,
+      `freq_treble_${tabId}`
+    ]);
+
+    filters.bass.frequency.value = stored[`freq_bass_${tabId}`] || DEFAULT_FREQS.bass;
+    filters.mid.frequency.value = stored[`freq_mid_${tabId}`] || DEFAULT_FREQS.mid;
+    filters.treble.frequency.value = stored[`freq_treble_${tabId}`] || DEFAULT_FREQS.treble;
+  });
 
   const canvas = document.getElementById('eqCanvas');
   const ctx = canvas.getContext('2d');
@@ -99,7 +115,6 @@ export function initEQGraph(dom) {
     computeResponses();
 
     function drawCurve(arr, color, width = 2) {
-      // Compute path
       const path = new Path2D();
       for (let i = 0; i < POINTS; i++) {
         const x = freqToX(freqs[i], plotW);
@@ -108,7 +123,6 @@ export function initEQGraph(dom) {
         else path.lineTo(x, y);
       }
 
-      // ---- GLOW LAYER ----
       ctx.save();
       ctx.shadowColor = color;
       ctx.shadowBlur = 10;
@@ -128,11 +142,18 @@ export function initEQGraph(dom) {
 
   draw();
 
-  // Public updater
+  // Public updaters
   window.redrawEQGraph = (settings) => {
     filters.bass.gain.value = settings.bass;
     filters.mid.gain.value = settings.mid;
     filters.treble.gain.value = settings.treble;
+  };
+
+  // 🎯 NEW: Live update frequencies (called from script.js)
+  window.updateEQFrequencies = (freqs) => {
+    if (freqs.bass)   filters.bass.frequency.value = freqs.bass;
+    if (freqs.mid)    filters.mid.frequency.value = freqs.mid;
+    if (freqs.treble) filters.treble.frequency.value = freqs.treble;
   };
 }
 

@@ -59,3 +59,26 @@ export async function clearTabSettings(tabId) {
     `activePreset_${tabId}`,
   ]);
 }
+
+// -------------------------------
+// Dropdown state management (per tab)
+// -------------------------------
+
+/**
+ * Save selected dropdown option for a tab.
+ * @param {number} tabId
+ * @param {string} option - 'gain', 'frequency', or 'quality'
+ */
+export async function saveDropdownOption(tabId, option) {
+  await chrome.storage.session.set({ [`configOption_${tabId}`]: option });
+}
+
+/**
+ * Load selected dropdown option for a tab.
+ * @param {number} tabId
+ * @returns {Promise<string>} - Returns saved option or default 'gain'
+ */
+export async function loadDropdownOption(tabId) {
+  const { [`configOption_${tabId}`]: savedOption } = await chrome.storage.session.get(`configOption_${tabId}`);
+  return savedOption || 'gain';
+}
