@@ -1,8 +1,11 @@
 // -------------------------------
 // EQ Graph (frequency response lines)
 // -------------------------------
-export function initEQGraph(dom) {
-  if (window.eqLinesInjected) return;
+
+import { DEFAULT_FREQUENCIES, percentToFreq, freqToPercent, clamp } from './math-utils.js';
+
+export function initEQGraph() {
+  if (window.eqLinesInjected) return window.eqGraphHandles;
   window.eqLinesInjected = true;
 
   const context = new (window.AudioContext || window.webkitAudioContext)();
@@ -17,35 +20,15 @@ export function initEQGraph(dom) {
   filters.mid.type = 'peaking';
   filters.treble.type = 'highshelf';
 
-  // Default fallback frequencies
-  const DEFAULT_FREQS = { bass: 60, mid: 1000, treble: 12000 };
-
-  // Restore saved frequencies per tab
-  chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
-    const tab = tabs[0];
-    if (!tab?.id) return;
-
-    const tabId = tab.id;
-    const stored = await chrome.storage.session.get([
-      `freq_bass_${tabId}`,
-      `freq_mid_${tabId}`,
-      `freq_treble_${tabId}`
-    ]);
-
-    filters.bass.frequency.value = stored[`freq_bass_${tabId}`] || DEFAULT_FREQS.bass;
-    filters.mid.frequency.value = stored[`freq_mid_${tabId}`] || DEFAULT_FREQS.mid;
-    filters.treble.frequency.value = stored[`freq_treble_${tabId}`] || DEFAULT_FREQS.treble;
-  });
-
   const canvas = document.getElementById('eqCanvas');
   const ctx = canvas.getContext('2d');
-
   const POINTS = 512;
+
+  // Precompute logarithmic frequency array
   const freqs = new Float32Array(POINTS);
-  const fmin = 20, fmax = 20000;
   for (let i = 0; i < POINTS; i++) {
     const frac = i / (POINTS - 1);
-    freqs[i] = fmin * Math.pow(fmax / fmin, frac);
+    freqs[i] = percentToFreq(frac * 100); // percentToFreq handles log scale
   }
 
   const mag = {
@@ -59,19 +42,30 @@ export function initEQGraph(dom) {
   }
 
   function freqToX(freq, plotW) {
-    return (Math.log10(freq / 20) / Math.log10(20000 / 20)) * plotW;
+    return freqToPercent(freq) / 100 * plotW;
   }
 
-  function wireSlider(slider, valElem, onChange) {
-    slider.addEventListener('input', (e) => {
-      valElem.textContent = e.target.value;
-      onChange(Number(e.target.value));
+  async function restoreFrequencies() {
+    chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
+      const tab = tabs[0];
+      if (!tab?.id) return;
+      const tabId = tab.id;
+
+      const stored = await chrome.storage.session.get([
+        `freq_bass_${tabId}`,
+        `freq_mid_${tabId}`,
+        `freq_treble_${tabId}`,
+      ]);
+
+      filters.bass.frequency.value = stored[`freq_bass_${tabId}`] ?? DEFAULT_FREQUENCIES.bass;
+      filters.mid.frequency.value = stored[`freq_mid_${tabId}`] ?? DEFAULT_FREQUENCIES.mid;
+      filters.treble.frequency.value = stored[`freq_treble_${tabId}`] ?? DEFAULT_FREQUENCIES.treble;
+
+      // ✅ No DOM updates
     });
   }
 
-  wireSlider(dom.bassControl, dom.bassValLabel, (v) => (filters.bass.gain.value = v));
-  wireSlider(dom.midControl, dom.midValLabel, (v) => (filters.mid.gain.value = v));
-  wireSlider(dom.trebleControl, dom.trebleValLabel, (v) => (filters.treble.gain.value = v));
+  restoreFrequencies();
 
   function computeResponses() {
     filters.bass.getFrequencyResponse(freqs, mag.bass, new Float32Array(POINTS));
@@ -122,7 +116,6 @@ export function initEQGraph(dom) {
         if (i === 0) path.moveTo(x, y);
         else path.lineTo(x, y);
       }
-
       ctx.save();
       ctx.shadowColor = color;
       ctx.shadowBlur = 10;
@@ -142,26 +135,23 @@ export function initEQGraph(dom) {
 
   draw();
 
-  // --- Return public updater handles ---
   function redrawEQGraph(settings) {
-    filters.bass.gain.value = settings.bass;
-    filters.mid.gain.value = settings.mid;
-    filters.treble.gain.value = settings.treble;
+    if (settings.bass !== undefined) filters.bass.gain.value = settings.bass;
+    if (settings.mid !== undefined) filters.mid.gain.value = settings.mid;
+    if (settings.treble !== undefined) filters.treble.gain.value = settings.treble;
   }
 
   function updateEQFrequencies(freqs) {
-    if (freqs.bass)   filters.bass.frequency.value = freqs.bass;
-    if (freqs.mid)    filters.mid.frequency.value = freqs.mid;
-    if (freqs.treble) filters.treble.frequency.value = freqs.treble;
+    if (freqs.bass !== undefined) filters.bass.frequency.value = freqs.bass;
+    if (freqs.mid !== undefined) filters.mid.frequency.value = freqs.mid;
+    if (freqs.treble !== undefined) filters.treble.frequency.value = freqs.treble;
   }
 
-  return { redrawEQGraph, updateEQFrequencies };
+  const handles = { redrawEQGraph, updateEQFrequencies };
+  window.eqGraphHandles = handles;
+  return handles;
 }
 
-
-// -------------------------------
-// Bar Graph Visualizer (separate)
-// -------------------------------
 export function initBarGraph() {
   if (window.barGraphInjected) return;
   window.barGraphInjected = true;
@@ -172,6 +162,7 @@ export function initBarGraph() {
   let stop = false;
   let paused = document.hidden;
 
+  // Draw the bars to canvas
   function drawBars() {
     if (stop || paused) return;
 
@@ -185,9 +176,11 @@ export function initBarGraph() {
       const bufferLength = frequencyData.length;
       const barWidth = (canvas.clientWidth / bufferLength) * 1.5;
       let x = 0;
+
       for (let i = 0; i < bufferLength; i++) {
-        const barHeight = (frequencyData[i] / 255) * canvas.clientHeight;
+        const barHeight = clamp((frequencyData[i] / 255) * canvas.clientHeight, 0, canvas.clientHeight);
         const hue = (i / bufferLength) * 360;
+
         ctx.fillStyle = `hsl(${hue}, 100%, 50%)`;
         ctx.fillRect(x, canvas.clientHeight - barHeight, barWidth, barHeight);
         x += barWidth;
@@ -197,6 +190,7 @@ export function initBarGraph() {
     requestAnimationFrame(drawBars);
   }
 
+  // Fetch frequency data from the content script
   function updateData() {
     if (stop || paused) return;
 
@@ -204,7 +198,7 @@ export function initBarGraph() {
       if (!tabs?.[0]?.id) return;
       chrome.tabs.sendMessage(tabs[0].id, { action: 'getFrequencyData' }, (response) => {
         if (response && response.data) {
-          frequencyData = response.data;
+          frequencyData = response.data.map((val) => clamp(val, 0, 255));
         }
       });
     });
@@ -212,26 +206,21 @@ export function initBarGraph() {
     requestAnimationFrame(updateData);
   }
 
-  // -------------------------------
-  // Visibility handling
-  // -------------------------------
+  // Pause/resume when tab visibility changes
   document.addEventListener('visibilitychange', () => {
     paused = document.hidden;
     if (!paused) {
-      // Resume only if not stopped
       requestAnimationFrame(drawBars);
       requestAnimationFrame(updateData);
     }
   });
 
-  // -------------------------------
-  // Cleanup on popup close
-  // -------------------------------
-  window.addEventListener("beforeunload", () => {
+  // Stop animation on unload
+  window.addEventListener('beforeunload', () => {
     stop = true;
   });
 
-  // Start initial loops
+  // Start drawing and updating
   requestAnimationFrame(drawBars);
   requestAnimationFrame(updateData);
 }

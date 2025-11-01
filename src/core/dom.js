@@ -25,7 +25,6 @@ export const dom = {
   customBtn: document.getElementById('customBtn'),
   contextMenu: document.getElementById('sliderMenu'),
   resetOption: document.getElementById('resetOption'),
-  disableOption: document.getElementById('disableOption'),
 
   // Dynamic
   get presetButtons() {
