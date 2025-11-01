@@ -18,6 +18,7 @@ export function initEQGraph() {
 
   filters.bass.type = 'lowshelf';
   filters.mid.type = 'peaking';
+  filters.mid.Q.value = 1; // default mid Q
   filters.treble.type = 'highshelf';
 
   const canvas = document.getElementById('eqCanvas');
@@ -55,13 +56,13 @@ export function initEQGraph() {
         `freq_bass_${tabId}`,
         `freq_mid_${tabId}`,
         `freq_treble_${tabId}`,
+        `midQ_${tabId}`,
       ]);
 
       filters.bass.frequency.value = stored[`freq_bass_${tabId}`] ?? DEFAULT_FREQUENCIES.bass;
       filters.mid.frequency.value = stored[`freq_mid_${tabId}`] ?? DEFAULT_FREQUENCIES.mid;
+      filters.mid.Q.value = stored[`midQ_${tabId}`] ?? 1;
       filters.treble.frequency.value = stored[`freq_treble_${tabId}`] ?? DEFAULT_FREQUENCIES.treble;
-
-      // ✅ No DOM updates
     });
   }
 
@@ -82,7 +83,8 @@ export function initEQGraph() {
 
     const plotW = canvas.clientWidth;
     const plotH = canvas.clientHeight;
-    const dbTop = 31, dbBottom = -31;
+    const dbTop = 31,
+      dbBottom = -31;
 
     // Frequency grid
     const freqTicks = [20, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000];
@@ -139,6 +141,7 @@ export function initEQGraph() {
     if (settings.bass !== undefined) filters.bass.gain.value = settings.bass;
     if (settings.mid !== undefined) filters.mid.gain.value = settings.mid;
     if (settings.treble !== undefined) filters.treble.gain.value = settings.treble;
+    if (settings.midQ !== undefined) filters.mid.Q.value = settings.midQ; // ✅ add midQ
   }
 
   function updateEQFrequencies(freqs) {
@@ -152,6 +155,10 @@ export function initEQGraph() {
   return handles;
 }
 
+// -------------------------------
+// Bar graph (audio spectrum)
+// -------------------------------
+
 export function initBarGraph() {
   if (window.barGraphInjected) return;
   window.barGraphInjected = true;
@@ -162,7 +169,6 @@ export function initBarGraph() {
   let stop = false;
   let paused = document.hidden;
 
-  // Draw the bars to canvas
   function drawBars() {
     if (stop || paused) return;
 
@@ -190,7 +196,6 @@ export function initBarGraph() {
     requestAnimationFrame(drawBars);
   }
 
-  // Fetch frequency data from the content script
   function updateData() {
     if (stop || paused) return;
 
@@ -206,7 +211,6 @@ export function initBarGraph() {
     requestAnimationFrame(updateData);
   }
 
-  // Pause/resume when tab visibility changes
   document.addEventListener('visibilitychange', () => {
     paused = document.hidden;
     if (!paused) {
@@ -215,12 +219,10 @@ export function initBarGraph() {
     }
   });
 
-  // Stop animation on unload
   window.addEventListener('beforeunload', () => {
     stop = true;
   });
 
-  // Start drawing and updating
   requestAnimationFrame(drawBars);
   requestAnimationFrame(updateData);
 }

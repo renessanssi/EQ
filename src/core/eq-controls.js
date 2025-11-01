@@ -9,6 +9,9 @@ import { initEQGraph } from './visualizer.js';
 export async function initEQControls(tabId) {
   const { eq, enabled, activePreset } = await loadTabSettings(tabId);
 
+  // -------------------------
+  // Initialize sliders
+  // -------------------------
   dom.bassControl.value = eq.bass;
   dom.midControl.value = eq.mid;
   dom.trebleControl.value = eq.treble;
@@ -17,19 +20,21 @@ export async function initEQControls(tabId) {
 
   updateValueLabels(eq);
   setControlsEnabled(enabled);
+
+  // -------------------------
+  // Presets
+  // -------------------------
   initPresetButtons(tabId);
-
-  const eqGraph = initEQGraph(dom);
-
   dom.presetButtons
     .find((b) => b.getAttribute('data-preset') === activePreset)
     ?.classList.add('active');
 
+  // -------------------------
+  // EQ toggle
+  // -------------------------
   dom.eqToggle.checked = enabled;
-
   if (enabled) sendEQSettings();
 
-  // EQ toggle
   dom.eqToggle.addEventListener('change', () => {
     const isEnabled = dom.eqToggle.checked;
     setControlsEnabled(isEnabled);
@@ -38,7 +43,14 @@ export async function initEQControls(tabId) {
     sendEQSettings();
   });
 
-  // Sliders (bass/mid/treble)
+  // -------------------------
+  // EQ graph
+  // -------------------------
+  const eqGraph = initEQGraph(dom);
+
+  // -------------------------
+  // Slider inputs (bass/mid/treble)
+  // -------------------------
   [dom.bassControl, dom.midControl, dom.trebleControl].forEach((slider) => {
     slider.addEventListener('input', async (e) => {
       const id = e.target.id;
@@ -62,37 +74,40 @@ export async function initEQControls(tabId) {
     });
   });
 
-  // Preamp + Master
+  // -------------------------
+  // Preamp & Master sliders
+  // -------------------------
   [dom.preampControl, dom.masterControl].forEach((control) => {
     control.addEventListener('input', async (e) => {
       const id = e.target.id;
       const value = Number(e.target.value);
+
       updateValueLabels({ [id]: value });
       sendSingleEQUpdate(id, value);
       await saveEQValue(tabId, id, value);
     });
   });
 
+  // -------------------------
   // Right-click reset menu
-  const contextMenu = document.getElementById('sliderMenu');
-  const resetOption = document.getElementById('resetOption');
+  // -------------------------
   let currentSlider = null;
 
-  [dom.bassControl, dom.midControl, dom.trebleControl].forEach((slider) => {
+  dom.sliders.slice(0, 3).forEach((slider) => { // bass/mid/treble only
     slider.addEventListener('contextmenu', (e) => {
       e.preventDefault();
       currentSlider = slider;
-      contextMenu.style.top = `${e.clientY}px`;
-      contextMenu.style.left = `${e.clientX}px`;
-      contextMenu.style.display = 'block';
+      dom.contextMenu.style.top = `${e.clientY}px`;
+      dom.contextMenu.style.left = `${e.clientX}px`;
+      dom.contextMenu.style.display = 'block';
     });
   });
 
   document.addEventListener('mousedown', (e) => {
-    if (!contextMenu.contains(e.target)) contextMenu.style.display = 'none';
+    if (!dom.contextMenu.contains(e.target)) dom.contextMenu.style.display = 'none';
   });
 
-  resetOption.addEventListener('click', async () => {
+  dom.resetOption.addEventListener('click', async () => {
     if (!currentSlider) return;
     const id = currentSlider.id;
     currentSlider.value = 0;
@@ -100,7 +115,7 @@ export async function initEQControls(tabId) {
     updateValueLabels({ [id]: 0 });
     sendSingleEQUpdate(id, 0);
     await saveEQValue(tabId, id, 0);
-    contextMenu.style.display = 'none';
+    dom.contextMenu.style.display = 'none';
 
     const allZero =
       +dom.bassControl.value === 0 &&
@@ -119,5 +134,24 @@ export async function initEQControls(tabId) {
     });
   });
 
+  // -------------------------
+  // Mid-Q slider
+  // -------------------------
+  const { midQSlider, midQValLabel } = dom;
+  const savedMidQ = await chrome.storage.session.get(`midQ_${tabId}`);
+  midQSlider.value = savedMidQ[`midQ_${tabId}`] ?? 1;
+  midQValLabel.textContent = midQSlider.value;
+
+  midQSlider.addEventListener('input', async (e) => {
+    const value = Number(e.target.value);
+    midQValLabel.textContent = value.toFixed(2);
+    sendSingleEQUpdate('midQ', value);
+    await chrome.storage.session.set({ [`midQ_${tabId}`]: value });
+    eqGraph.redrawEQGraph({ midQ: value });
+  });
+
+  // -------------------------
+  // Initial redraw
+  // -------------------------
   eqGraph.redrawEQGraph(eq);
 }

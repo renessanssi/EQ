@@ -85,7 +85,9 @@
   window.addEventListener('updateEqualizer', (e) => {
     const s = e.detail;
     if (!s) return;
-
+    
+    if (s.midQ !== undefined) filters.mid.Q.value = s.midQ;
+    
     if (s.bassFreq !== undefined) filters.bass.frequency.value = s.bassFreq;
     if (s.midFreq !== undefined) filters.mid.frequency.value = s.midFreq;
     if (s.trebleFreq !== undefined) filters.treble.frequency.value = s.trebleFreq;

@@ -1,27 +1,18 @@
-import { sendSingleEQUpdate } from './messaging.js'; // import the messaging function
+import { sendSingleEQUpdate } from './messaging.js';
 import { clamp, percentToFreq, freqToPercent, DEFAULT_FREQUENCIES } from './math-utils.js';
 import { saveKnobFrequency } from './storage-helpers.js';
 import { initEQGraph } from './visualizer.js';
 import { dom } from './dom.js';
 
 export async function initKnobs(tabId) {
-  const knobs = [
-    document.getElementById('freqKnob1'),
-    document.getElementById('freqKnob2'),
-    document.getElementById('freqKnob3'),
-  ];
-  const labels = [
-    document.getElementById('freqLabel1'),
-    document.getElementById('freqLabel2'),
-    document.getElementById('freqLabel3'),
-  ];
-  const bandLabels = [
-    document.getElementById('bandLabel1'),
-    document.getElementById('bandLabel2'),
-    document.getElementById('bandLabel3'),
-  ];
-  const slider = document.querySelector('.freq-slider');
+  const knobs = dom.freqKnobs;
+  const labels = dom.freqLabels;
+  const bandLabels = dom.bandLabels;
+  const slider = document.querySelector('.freq-slider'); // slider track
 
+  // -------------------------
+  // Load saved frequencies
+  // -------------------------
   const saved = await chrome.storage.session.get([
     `freq_bass_${tabId}`,
     `freq_mid_${tabId}`,
@@ -37,8 +28,10 @@ export async function initKnobs(tabId) {
   const eqGraph = initEQGraph(dom);
   eqGraph.updateEQFrequencies(currentFreqs);
 
-  const initialFreqs = [currentFreqs.bass, currentFreqs.mid, currentFreqs.treble];
-  initialFreqs.forEach((freq, i) => {
+  // -------------------------
+  // Set initial knob positions
+  // -------------------------
+  [currentFreqs.bass, currentFreqs.mid, currentFreqs.treble].forEach((freq, i) => {
     const percent = freqToPercent(freq);
     const freqText = freq >= 1000 ? (freq / 1000).toFixed(1) + ' kHz' : freq + ' Hz';
     knobs[i].style.left = percent + '%';
@@ -51,8 +44,15 @@ export async function initKnobs(tabId) {
   dom.midTextLabel.textContent = labels[1].textContent;
   dom.trebleTextLabel.textContent = labels[2].textContent;
 
+  // -------------------------
+  // Dragging state
+  // -------------------------
   let activeKnob = null;
+  const GAP_PERCENT = 5; // minimum distance between knobs
 
+  // -------------------------
+  // Mouse events
+  // -------------------------
   knobs.forEach((knob, i) => {
     knob.addEventListener('mousedown', (e) => {
       e.preventDefault();
@@ -61,8 +61,6 @@ export async function initKnobs(tabId) {
       document.addEventListener('mouseup', onMouseUp);
     });
   });
-
-  const GAP_PERCENT = 5;
 
   function pushKnobs(index, percent, direction) {
     const min = index === 0 ? 0 : parseFloat(knobs[index - 1].style.left) + GAP_PERCENT;
@@ -77,11 +75,12 @@ export async function initKnobs(tabId) {
     labels[index].style.left = clamped + '%';
     bandLabels[index].style.left = clamped + '%';
 
+    // Update main EQ text labels
     if (index === 0) dom.bassTextLabel.textContent = freqText;
     if (index === 1) dom.midTextLabel.textContent = freqText;
     if (index === 2) dom.trebleTextLabel.textContent = freqText;
 
-    // Save in session storage
+    // Save frequency
     saveKnobFrequency(
       tabId,
       index === 0 ? `freq_bass_${tabId}` : index === 1 ? `freq_mid_${tabId}` : `freq_treble_${tabId}`,
@@ -93,11 +92,11 @@ export async function initKnobs(tabId) {
       [index === 0 ? 'bass' : index === 1 ? 'mid' : 'treble']: freq,
     });
 
-    // ✅ Send the frequency to content.js
+    // Send frequency to content script
     const type = index === 0 ? 'bassFreq' : index === 1 ? 'midFreq' : 'trebleFreq';
-    sendSingleEQUpdate(type, freq); // dispatch to content script
+    sendSingleEQUpdate(type, freq);
 
-    // Push next knob if hitting limit
+    // Push next/previous knob if hitting limit
     if (direction === 1 && index < knobs.length - 1 && clamped >= max) {
       pushKnobs(index + 1, percent, direction);
     }
