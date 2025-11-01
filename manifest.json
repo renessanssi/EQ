@@ -9,7 +9,7 @@
     "https://*/*"
   ],
   "action": {
-    "default_popup": "popup/index.html",
+    "default_popup": "src/index.html",
     "default_title": "EQ",
     "default_icon": {
       "16": "assets/icon128.png",
